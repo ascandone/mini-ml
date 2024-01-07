@@ -78,6 +78,29 @@ test("unify to another bound TVar should fail", () => {
   expect(() => unify($a, $c)).toThrow(UnifyError);
 });
 
+test("unify 3 lvars", () => {
+  const $a = TVar.fresh();
+  const $b = TVar.fresh();
+  const $c = TVar.fresh();
+
+  unify($a, $c);
+  unify($c, $b);
+  unify($a, ["Int"]);
+
+  expect($a.resolve()).toEqual<TVarResolution>({
+    type: "bound",
+    value: ["Int"],
+  });
+  expect($b.resolve()).toEqual<TVarResolution>({
+    type: "bound",
+    value: ["Int"],
+  });
+  expect($c.resolve()).toEqual<TVarResolution>({
+    type: "bound",
+    value: ["Int"],
+  });
+});
+
 test("TVars should be reactive (left)", () => {
   const $a = TVar.fresh();
   const $b = TVar.fresh();
