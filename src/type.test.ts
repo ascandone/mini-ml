@@ -1,5 +1,12 @@
 import { test, expect, beforeEach, describe } from "vitest";
-import { TVar, TVarResolution, UnifyError, generalize, unify } from "./type";
+import {
+  TVar,
+  TVarResolution,
+  UnifyError,
+  generalize,
+  instantiate,
+  unify,
+} from "./type";
 
 beforeEach(() => {
   TVar.resetId();
@@ -305,5 +312,43 @@ describe("generalization", () => {
 
     expect($g1.value.id).toEqual(0);
     expect($g2.value.id).toEqual(0);
+  });
+
+  test("instantiate concrete type", () => {
+    const m = instantiate(["Int"]);
+    expect(m).toEqual(["Int"]);
+  });
+
+  test("instantiate single var", () => {
+    const $a = TVar.fresh();
+    const $g = generalize($a);
+    const $m = instantiate($g) as TVar;
+    expect($m.resolve().type).toEqual("unbound");
+    expect(($m.resolve() as any).id).not.toEqual(($a.resolve() as any).id);
+  });
+
+  test("instantiate two different vars", () => {
+    const $a = TVar.fresh();
+    const $b = TVar.fresh();
+
+    const $g = generalize(["Pair", $a, $b]);
+
+    const [_, $ai, $bi] = instantiate($g) as any[];
+
+    expect($ai.resolve().type).toEqual("unbound");
+    expect($bi.resolve().type).toEqual("unbound");
+    expect($ai.resolve().id).not.toEqual($bi.resolve().id);
+  });
+
+  test("instantiate two same vars", () => {
+    const $a = TVar.fresh();
+    const $g = generalize(["Pair", $a, $a]);
+
+    const [, $ai, $bi] = instantiate($g) as any[];
+
+    expect($ai.value.type).toEqual("unbound");
+    expect($bi.value.type).toEqual("unbound");
+
+    expect($ai.value.id).toEqual($bi.value.id);
   });
 });

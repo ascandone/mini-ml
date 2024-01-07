@@ -163,3 +163,32 @@ export function generalize(t: Type): Type {
 
   return recur(t);
 }
+
+export function instantiate(t: Type): Type {
+  const instantiated = new Map<number, TVar>();
+
+  function recur(t: Type): Type {
+    if (!(t instanceof TVar)) {
+      const [name, ...args] = t;
+      return [name, ...args.map(recur)];
+    }
+
+    const resolvedT = t.resolve();
+    switch (resolvedT.type) {
+      case "bound":
+      case "unbound":
+        return t;
+      case "quantified": {
+        const lookup = instantiated.get(resolvedT.id);
+        if (lookup === undefined) {
+          const fresh = TVar.fresh();
+          instantiated.set(resolvedT.id, fresh);
+          return fresh;
+        }
+        return lookup;
+      }
+    }
+  }
+
+  return recur(t);
+}
