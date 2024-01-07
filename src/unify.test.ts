@@ -6,7 +6,7 @@ import {
   generalize,
   instantiate,
   unify,
-} from "./type";
+} from "./unify";
 
 beforeEach(() => {
   TVar.resetId();
