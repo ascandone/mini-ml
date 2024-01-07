@@ -28,7 +28,7 @@ export class TVar {
     return this.value;
   }
 
-  private static unboundId: number;
+  private static unboundId = 0;
   static resetId() {
     TVar.unboundId = 0;
   }
@@ -43,7 +43,7 @@ export class TVar {
       }
 
       for (let i = 0; i < rest1.length; i++) {
-        this.unify(rest1[i]!, rest2[i]!);
+        TVar.unify(rest1[i]!, rest2[i]!);
       }
     } else if (t1 instanceof TVar && isConcrete(t2)) {
       occursCheck(t1, t2);
