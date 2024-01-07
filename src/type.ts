@@ -16,6 +16,10 @@ export class TVar {
     return new TVar({ type: "unbound", id: TVar.unboundId++ });
   }
 
+  static quantified(id: number): TVar {
+    return new TVar({ type: "quantified", id });
+  }
+
   resolve(): TVarResolution {
     if (this.value.type === "linked") {
       return this.value.to.resolve();
@@ -128,7 +132,34 @@ function occursCheck(v: TVar, x: Type) {
     return;
   }
 
-  if (resolvedV.id === resolvedV.id) {
+  if (resolvedV.id === resolvedX.id) {
     throw new UnifyError("Occurs check", v, x);
   }
+}
+
+export function generalize(t: Type): Type {
+  let nextId = 0;
+  const bound = new Map<number, number>();
+
+  function recur(t: Type): Type {
+    if (!(t instanceof TVar)) {
+      const [name, ...args] = t;
+      return [name, ...args.map(recur)];
+    }
+
+    const resolvedT = t.resolve();
+    switch (resolvedT.type) {
+      case "quantified":
+        throw new Error("[unreachable] cannot generalize polytype");
+      case "bound":
+        return recur(resolvedT.value);
+      case "unbound": {
+        const thisId = bound.get(resolvedT.id) ?? nextId++;
+        bound.set(resolvedT.id, thisId);
+        return TVar.quantified(thisId);
+      }
+    }
+  }
+
+  return recur(t);
 }

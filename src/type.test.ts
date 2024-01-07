@@ -1,5 +1,5 @@
-import { test, expect, beforeEach } from "vitest";
-import { TVar, TVarResolution, UnifyError, unify } from "./type";
+import { test, expect, beforeEach, describe } from "vitest";
+import { TVar, TVarResolution, UnifyError, generalize, unify } from "./type";
 
 beforeEach(() => {
   TVar.resetId();
@@ -231,4 +231,79 @@ test("occurs check of unified values", () => {
   unify($a, $b);
 
   expect(() => unify($a, ["List", $b])).toThrow(UnifyError);
+});
+
+describe("generalization", () => {
+  test("generalize primitive value", () => {
+    const poly = generalize(["Int"]);
+    expect(poly).toEqual(["Int"]);
+  });
+
+  test("generalize var bound to primitive", () => {
+    const $a = TVar.fresh();
+    unify($a, ["Int"]);
+    const poly = generalize($a);
+    expect(poly).toEqual(["Int"]);
+  });
+
+  test("generalize single unbound var", () => {
+    const $a = TVar.fresh();
+    const poly = generalize($a);
+
+    expect((poly as TVar).resolve().type).toEqual("quantified");
+  });
+
+  test("generalize many vars", () => {
+    const $a = TVar.fresh();
+    const $b = TVar.fresh();
+
+    const poly = generalize(["Tuple", $a, $b]) as any[];
+
+    expect(poly.length).toEqual(3);
+    const [t, $g1, $g2] = poly;
+
+    expect(t, "Tuple");
+
+    expect($g1.value.type).toEqual("quantified");
+    expect($g2.value.type).toEqual("quantified");
+
+    expect($g1.value.id).toEqual(0);
+    expect($g2.value.id).toEqual(1);
+  });
+
+  test("generalize many vars when linked", () => {
+    const $a = TVar.fresh();
+
+    const poly = generalize(["Tuple", $a, $a]) as any[];
+
+    expect(poly.length).toEqual(3);
+    const [t, $g1, $g2] = poly;
+
+    expect(t, "Tuple");
+
+    expect($g1.value.type).toEqual("quantified");
+    expect($g2.value.type).toEqual("quantified");
+
+    expect($g1.value.id).toEqual(0);
+    expect($g2.value.id).toEqual(0);
+  });
+
+  test("generalize var bound to a nested type to generalize ", () => {
+    const $a = TVar.fresh();
+    const $b = TVar.fresh();
+    unify($a, ["->", $b, $b]);
+
+    const poly = generalize($a) as any[];
+
+    expect(poly.length).toEqual(3);
+    const [t, $g1, $g2] = poly;
+
+    expect(t, "->");
+
+    expect($g1.value.type).toEqual("quantified");
+    expect($g2.value.type).toEqual("quantified");
+
+    expect($g1.value.id).toEqual(0);
+    expect($g2.value.id).toEqual(0);
+  });
 });
