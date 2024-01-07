@@ -41,7 +41,7 @@ test("infer abstraction returning a constant", () => {
       type: "constant",
       value: 42,
     },
-  }) as any;
+  } as const) as any;
 
   expect(ast.$.resolve().type).toEqual("bound");
   const [t, param, body] = ast.$.resolve().value;
@@ -89,7 +89,7 @@ test("infer identity function", () => {
       type: "ident",
       ident: "x",
     },
-  });
+  } as UntypedAst);
 
   expect(ast.$.resolve().type).toEqual("bound");
   const [t, $param, $body] = (ast.$.resolve() as any).value;
@@ -117,7 +117,7 @@ test("infer abstraction parameter", () => {
         value: 42,
       },
     },
-  }) as any;
+  } as UntypedAst) as any;
 
   expect(ast.$.resolve().type, "bound");
   const [t, $param, $body] = ast.$.resolve().value;
@@ -147,7 +147,7 @@ test("infer monomorphic type in let", () => {
       type: "ident",
       ident: "x",
     },
-  }) as any;
+  } as UntypedAst) as any;
 
   expect(ast.definition.$.resolve()).toEqual({ type: "bound", value: ["Num"] });
   expect(ast.definition.$.resolve()).toEqual(ast.binding.$.resolve());

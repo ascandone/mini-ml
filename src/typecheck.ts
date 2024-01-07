@@ -1,37 +1,8 @@
+import { Ast, Const } from "./ast";
 import { TVar, Type, generalize, instantiate, unify } from "./unify";
 
-export type Const = null | boolean | number | string;
-
-export type Ast<Meta = {}> = Meta &
-  (
-    | {
-        type: "constant";
-        value: Const;
-      }
-    | {
-        type: "ident";
-        ident: string;
-      }
-    | {
-        type: "abstraction";
-        param: { name: string } & Meta;
-        body: Ast<Meta>;
-      }
-    | {
-        type: "application";
-        caller: Ast<Meta>;
-        arg: Ast<Meta>;
-      }
-    | {
-        type: "let";
-        binding: { name: string } & Meta;
-        definition: Ast<Meta>;
-        body: Ast<Meta>;
-      }
-  );
-
-export type UntypedAst = Ast;
-export type TypedAst = Ast<{ $: TVar }>;
+export type UntypedAst<T = {}> = Ast<T>;
+export type TypedAst<T = {}> = Ast<T & { $: TVar }>;
 
 export class UnboundVariableError extends Error {
   constructor(public name: string) {
@@ -41,7 +12,7 @@ export class UnboundVariableError extends Error {
 
 type Context = Record<string, Type>;
 
-function typecheckAnnotated(ast: TypedAst, context: Context) {
+function typecheckAnnotated<T>(ast: TypedAst<T>, context: Context) {
   switch (ast.type) {
     case "constant": {
       const t = inferConstant(ast.value);
@@ -81,7 +52,10 @@ function typecheckAnnotated(ast: TypedAst, context: Context) {
   }
 }
 
-export function typecheck(ast: UntypedAst, context: Context = {}): TypedAst {
+export function typecheck<T = {}>(
+  ast: UntypedAst<T>,
+  context: Context = {}
+): TypedAst<T> {
   TVar.resetId();
   const typedAst = annotate(ast);
   typecheckAnnotated(typedAst, context);
@@ -102,7 +76,7 @@ function inferConstant(x: Const): Type {
   }
 }
 
-function annotate(ast: UntypedAst): TypedAst {
+function annotate<T>(ast: UntypedAst<T>): TypedAst<T> {
   switch (ast.type) {
     case "constant":
     case "ident":
