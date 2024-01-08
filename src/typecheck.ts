@@ -10,7 +10,7 @@ export class UnboundVariableError extends Error {
   }
 }
 
-type Context = Record<string, Type>;
+export type Context = Record<string, Type>;
 
 function typecheckAnnotated<T>(ast: TypedAst<T>, context: Context) {
   switch (ast.type) {
