@@ -1,15 +1,15 @@
-import { TVar, Type } from "../unify";
+import { TVar, Type, generalize } from "../unify";
 
-export function typePPrint(t: Type): string {
+function pprintHelper(t: Type): string {
   if (t instanceof TVar) {
     const resolved = t.resolve();
     switch (resolved.type) {
-      case "unbound":
+      case "quantified":
         return `t${resolved.id}`;
       case "bound":
-        return typePPrint(resolved.value);
-      case "quantified":
-        throw new Error("Cannot pprint polytypes");
+        return pprintHelper(resolved.value);
+      case "unbound":
+        throw new Error("[unreachable]");
     }
   }
 
@@ -18,16 +18,20 @@ export function typePPrint(t: Type): string {
   if (name === "->") {
     const [left, right] = args as [Type, Type];
     const needsParens = !(left instanceof TVar) && left[0] === "->";
-    const ppLeft = needsParens ? `(${typePPrint(left)})` : typePPrint(left);
-    return `${ppLeft} -> ${typePPrint(right)}`;
+    const ppLeft = needsParens ? `(${pprintHelper(left)})` : pprintHelper(left);
+    return `${ppLeft} -> ${pprintHelper(right)}`;
   } else {
     const ret: string[] = [name];
     for (const arg of args) {
-      const s = typePPrint(arg);
+      const s = pprintHelper(arg);
       ret.push(" ");
       const needsParens = !(arg instanceof TVar) && arg.length > 1;
       ret.push(needsParens ? `(${s})` : s);
     }
     return ret.join("");
   }
+}
+
+export function typePPrint(t: Type): string {
+  return pprintHelper(generalize(t));
 }
