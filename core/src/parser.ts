@@ -18,28 +18,26 @@ function getSpan({ source }: OhmNode): Span {
 
 const semantics = grammar.createSemantics();
 
-function infixOp(ident: string) {
-  return function (
-    this: NonterminalNode,
-    left: NonterminalNode,
-    op: TerminalNode,
-    right: NonterminalNode
-  ): SpannedAst {
-    return {
+function infixOp(
+  this: NonterminalNode,
+  left: NonterminalNode,
+  op: TerminalNode,
+  right: NonterminalNode
+): SpannedAst {
+  return {
+    type: "application",
+    caller: {
       type: "application",
       caller: {
-        type: "application",
-        caller: {
-          type: "ident",
-          ident,
-          span: getSpan(op),
-        },
-        arg: left.expr(),
-        span: getSpan(this),
+        type: "ident",
+        ident: op.sourceString,
+        span: getSpan(op),
       },
-      arg: right.expr(),
+      arg: left.expr(),
       span: getSpan(this),
-    };
+    },
+    arg: right.expr(),
+    span: getSpan(this),
   };
 }
 
@@ -90,12 +88,6 @@ semantics.addOperation<SpannedAst>("expr()", {
     );
   },
 
-  AddExp_plus: infixOp("+"),
-  AddExp_minus: infixOp("-"),
-  MulExp_times: infixOp("*"),
-  MulExp_divide: infixOp("/"),
-  ExpExp_power: infixOp("^"),
-
   PriExp_paren(_l, arg1, _r) {
     return arg1.expr();
   },
@@ -115,6 +107,21 @@ semantics.addOperation<SpannedAst>("expr()", {
       span: getSpan(this),
     };
   },
+
+  EqExpr_eq: infixOp,
+  EqExpr_neq: infixOp,
+  CompExp_lte: infixOp,
+  CompExp_lt: infixOp,
+  CompExp_gt: infixOp,
+  CompExp_gte: infixOp,
+  AddExp_plus: infixOp,
+  AddExp_minus: infixOp,
+  MulExp_times: infixOp,
+  MulExp_divide: infixOp,
+  MulExp_rem: infixOp,
+  ExpExp_power: infixOp,
+  OrExpr_or: infixOp,
+  AndExpr_and: infixOp,
 });
 
 semantics.addOperation<UntypedAst[]>("parse()", {

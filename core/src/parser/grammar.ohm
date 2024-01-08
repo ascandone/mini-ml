@@ -1,9 +1,29 @@
-Arithmetic {
+Expr {
   MAIN
     = Exp -- expr
 
   Exp
-    = AddExp
+    = CompExp
+
+  CompExp
+    = CompExp "<" CompExp -- lt
+    | CompExp "<=" CompExp -- lte
+    | CompExp ">" CompExp -- gt
+    | CompExp ">=" CompExp -- gte
+    | EqExpr
+
+  EqExpr
+    = EqExpr "==" EqExpr -- eq
+    | EqExpr "!=" EqExpr -- neq
+    | AndExpr
+
+  AndExpr
+    = AndExpr "&&" AndExpr -- and
+    | OrExpr
+
+  OrExpr
+    = OrExpr "||" OrExpr -- or
+    | AddExp
 
   AddExp
     = AddExp "+" MulExp  -- plus
@@ -13,6 +33,7 @@ Arithmetic {
   MulExp
     = MulExp "*" ExpExp  -- times
     | MulExp "/" ExpExp  -- divide
+    | MulExp "%" ExpExp  -- rem
     | ExpExp
 
   ExpExp
