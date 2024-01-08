@@ -43,24 +43,19 @@ function infixOp(ident: string) {
   };
 }
 
-function prefixOp(ident: string) {
-  return function (
-    this: NonterminalNode,
-    op: TerminalNode,
-    x: NonterminalNode
-  ): SpannedAst {
-    return {
-      type: "application",
-      caller: {
-        type: "ident",
-        ident,
-        span: getSpan(op),
-      },
-      arg: x.expr(),
-      span: getSpan(this),
-    };
-  };
-}
+semantics.addOperation<number>("number()", {
+  number_whole(node) {
+    return Number(node.sourceString);
+  },
+
+  number_fract(_intPart, _comma, _floatPart) {
+    return Number(this.sourceString);
+  },
+
+  number_neg(_minus, node) {
+    return -node.number();
+  },
+});
 
 semantics.addOperation<SpannedAst>("expr()", {
   PriExp_let(_let, ident, _eq, def, _in, body) {
@@ -82,7 +77,7 @@ semantics.addOperation<SpannedAst>("expr()", {
     };
   },
 
-  Exp_appl(items) {
+  ExpExp_appl(items) {
     const [first, ...other] = items.children;
     return other.reduce<SpannedAst>(
       (acc, node) => ({
@@ -98,7 +93,6 @@ semantics.addOperation<SpannedAst>("expr()", {
   AddExp_plus: infixOp("+"),
   AddExp_minus: infixOp("-"),
   MulExp_times: infixOp("*"),
-  PriExp_neg: prefixOp("negate"),
 
   PriExp_paren(_l, arg1, _r) {
     return arg1.expr();
@@ -111,10 +105,11 @@ semantics.addOperation<SpannedAst>("expr()", {
       span: getSpan(this),
     };
   },
-  number(_) {
+
+  number(node) {
     return {
       type: "constant",
-      value: Number(this.sourceString),
+      value: node.number(),
       span: getSpan(this),
     };
   },

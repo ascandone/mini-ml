@@ -3,7 +3,7 @@ Arithmetic {
     = Exp -- expr
 
   Exp
-    = AddExp+ -- appl
+    = AddExp
 
   AddExp
     = AddExp "+" MulExp  -- plus
@@ -17,11 +17,10 @@ Arithmetic {
 
   ExpExp
     = PriExp "^" ExpExp  -- power
-    | PriExp
+    | PriExp+ -- appl
 
   PriExp
     = "(" Exp ")"  -- paren
-    | "-" PriExp   -- neg
     | "let" ident "=" Exp "in" Exp -- let
     | "\\" ident "->" Exp -- abs
     | ident
@@ -33,6 +32,7 @@ Arithmetic {
   number  (a number)
     = digit* "." digit+  -- fract
     | digit+             -- whole
+    | "-" number  -- neg
 
   keyword = "let" | "in"
 }

@@ -1,23 +1,35 @@
 import { test, expect, describe } from "vitest";
 import { SpannedAst, unsafeParse, Span } from "./parser";
 
-test("int number", () => {
-  const INPUT = "42";
+describe("numbers", () => {
+  test("int number", () => {
+    const INPUT = "42";
 
-  expect(unsafeParse(INPUT)).toEqual<SpannedAst>({
-    type: "constant",
-    value: 42,
-    span: [0, 2],
+    expect(unsafeParse(INPUT)).toEqual<SpannedAst>({
+      type: "constant",
+      value: 42,
+      span: [0, 2],
+    });
   });
-});
 
-test("float number", () => {
-  const INPUT = "42.3";
+  test("negative number", () => {
+    const INPUT = "-42";
 
-  expect(unsafeParse(INPUT)).toEqual<SpannedAst>({
-    type: "constant",
-    value: 42.3,
-    span: [0, 4],
+    expect(unsafeParse(INPUT)).toEqual<SpannedAst>({
+      type: "constant",
+      value: -42,
+      span: spanOf(INPUT, INPUT),
+    });
+  });
+
+  test("float number", () => {
+    const INPUT = "42.3";
+
+    expect(unsafeParse(INPUT)).toEqual<SpannedAst>({
+      type: "constant",
+      value: 42.3,
+      span: [0, 4],
+    });
   });
 });
 
@@ -91,25 +103,6 @@ test("infix *", () => {
       span: spanOf(INPUT, INPUT),
     },
     arg: { type: "constant", value: 2, span: spanOf(INPUT, "2") },
-    span: spanOf(INPUT, INPUT),
-  });
-});
-
-test("prefix -", () => {
-  const INPUT = "- 42";
-
-  expect(unsafeParse(INPUT)).toEqual<SpannedAst>({
-    type: "application",
-    caller: {
-      type: "ident",
-      ident: "negate",
-      span: spanOf(INPUT, "-"),
-    },
-    arg: {
-      type: "constant",
-      value: 42,
-      span: spanOf(INPUT, "42"),
-    },
     span: spanOf(INPUT, INPUT),
   });
 });
@@ -230,23 +223,6 @@ test("application (2 args)", () => {
   });
 });
 
-test("application and prefix precedence", () => {
-  // == (- f) x
-  const INPUT = `-f x`;
-
-  expect(unsafeParse(INPUT)).toEqual<SpannedAst>({
-    type: "application",
-    caller: {
-      type: "application",
-      caller: { type: "ident", ident: "negate", span: expect.anything() },
-      arg: { type: "ident", ident: "f", span: expect.anything() },
-      span: expect.anything(),
-    },
-    arg: { type: "ident", ident: "x", span: expect.anything() },
-    span: expect.anything(),
-  });
-});
-
 test("parens", () => {
   const INPUT = "(f)";
   expect(unsafeParse(INPUT)).toEqual<SpannedAst>({
@@ -257,20 +233,46 @@ test("parens", () => {
 });
 
 test("infix and fn precedence", () => {
-  const INPUT = "- \\x -> x";
+  // (plus 1) (\x -> x)
+  const INPUT = "1 + \\x -> x";
+
   expect(unsafeParse(INPUT)).toEqual<SpannedAst>({
     type: "application",
-    caller: { type: "ident", ident: "negate", span: expect.anything() },
+    caller: expect.anything(),
+    arg: expect.objectContaining({ type: "abstraction" }),
+    span: expect.anything(),
+  });
+});
+
+test("infix and application precedence", () => {
+  // (plus 1) (let x = ...)
+  const INPUT = "1 + let x = 0 in 0";
+
+  expect(unsafeParse(INPUT)).toEqual<SpannedAst>({
+    type: "application",
+    caller: {
+      type: "application",
+      caller: expect.anything(),
+      arg: expect.anything(),
+      span: expect.anything(),
+    },
     arg: expect.anything(),
     span: expect.anything(),
   });
 });
 
-test("infix and let precedence", () => {
-  const INPUT = "- let x = 0 in 0";
+test("infix and application precedence", () => {
+  // (`+` 1) (f x)
+  const INPUT = "1 + f x";
+
   expect(unsafeParse(INPUT)).toEqual<SpannedAst>({
     type: "application",
-    caller: { type: "ident", ident: "negate", span: expect.anything() },
+    caller: {
+      type: "application",
+      caller: { type: "ident", ident: "+", span: expect.anything() },
+      arg: { type: "constant", value: 1, span: expect.anything() },
+      span: expect.anything(),
+    },
     arg: expect.anything(),
     span: expect.anything(),
   });
