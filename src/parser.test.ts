@@ -121,6 +121,22 @@ test("let definition statement", () => {
   });
 });
 
+test("abstraction", () => {
+  const INPUT = `\\ x -> 42`;
+  expect(unsafeParse(INPUT)).toEqual<SpannedAst>({
+    type: "abstraction",
+    param: { name: "x", span: spanOf(INPUT, "x") },
+    body: { type: "constant", value: 42, span: spanOf(INPUT, "42") },
+    span: spanOf(INPUT, INPUT),
+  });
+});
+
+test("abstraction+let", () => {
+  expect(() => unsafeParse("\\ x -> let x = 0 in 0")).not.toThrow();
+  expect(() => unsafeParse("let x = 0 in \\ x -> 42")).not.toThrow();
+  expect(() => unsafeParse("let x = \\ x -> 42 in 0")).not.toThrow();
+});
+
 function spanOf(src: string, substr: string): Span {
   const index = src.indexOf(substr);
   return [index, index + substr.length];

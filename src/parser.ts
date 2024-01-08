@@ -54,6 +54,15 @@ semantics.addOperation<SpannedAst>("expr()", {
     };
   },
 
+  Exp_abs(_fn, param, _arrow, body) {
+    return {
+      type: "abstraction",
+      param: { name: param.sourceString, span: getSpan(param) },
+      body: body.expr(),
+      span: getSpan(this),
+    };
+  },
+
   AddExp_plus: infixOp("+"),
   MulExp_times: infixOp("*"),
 

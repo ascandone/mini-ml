@@ -4,6 +4,7 @@ Arithmetic {
 
   Exp
     = "let" ident "=" Exp "in" Exp -- let
+    | "\\" ident "->" Exp --abs
     | AddExp -- expr
 
   AddExp
