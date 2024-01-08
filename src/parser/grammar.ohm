@@ -5,7 +5,7 @@ Arithmetic {
   Exp
     = "let" ident "=" Exp "in" Exp -- let
     | "\\" ident "->" Exp --abs
-    | AddExp -- expr
+    | AddExp+ -- appl
 
   AddExp
     = AddExp "+" MulExp  -- plus
@@ -28,9 +28,11 @@ Arithmetic {
     | number
 
   ident  (an identifier)
-    = letter alnum*
+    = ~keyword letter alnum*
 
   number  (a number)
     = digit* "." digit+  -- fract
     | digit+             -- whole
+
+  keyword = "let" | "in"
 }

@@ -183,7 +183,7 @@ function spanOf(src: string, substr: string): Span {
   return [index, index + substr.length];
 }
 
-test.skip("application", () => {
+test("application", () => {
   const INPUT = `f x`;
 
   expect(unsafeParse(INPUT)).toEqual<SpannedAst>({
@@ -202,7 +202,7 @@ test.skip("application", () => {
   });
 });
 
-test.skip("application (2 args)", () => {
+test("application (2 args)", () => {
   const INPUT = `f x y`;
 
   expect(unsafeParse(INPUT)).toEqual<SpannedAst>({
@@ -227,5 +227,22 @@ test.skip("application (2 args)", () => {
       span: spanOf(INPUT, "y"),
     },
     span: spanOf(INPUT, INPUT),
+  });
+});
+
+test("application and prefix precedence", () => {
+  // == (- f) x
+  const INPUT = `-f x`;
+
+  expect(unsafeParse(INPUT)).toEqual<SpannedAst>({
+    type: "application",
+    caller: {
+      type: "application",
+      caller: { type: "ident", ident: "negate", span: expect.anything() },
+      arg: { type: "ident", ident: "f", span: expect.anything() },
+      span: expect.anything(),
+    },
+    arg: { type: "ident", ident: "x", span: expect.anything() },
+    span: expect.anything(),
   });
 });

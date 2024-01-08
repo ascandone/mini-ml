@@ -82,18 +82,18 @@ semantics.addOperation<SpannedAst>("expr()", {
     };
   },
 
-  // ExpExp_appl(items) {
-  //   const [first, ...other] = items.children;
-  //   return other.reduce<SpannedAst>(
-  //     (acc, node) => ({
-  //       type: "application",
-  //       caller: acc,
-  //       arg: node.expr(),
-  //       span: getSpan(this),
-  //     }),
-  //     first!.expr()
-  //   );
-  // },
+  Exp_appl(items) {
+    const [first, ...other] = items.children;
+    return other.reduce<SpannedAst>(
+      (acc, node) => ({
+        type: "application",
+        caller: acc,
+        arg: node.expr(),
+        span: getSpan(this),
+      }),
+      first!.expr()
+    );
+  },
 
   AddExp_plus: infixOp("+"),
   AddExp_minus: infixOp("-"),
@@ -141,5 +141,5 @@ export function unsafeParse(input: string): SpannedAst {
     return res.value;
   }
 
-  throw new Error(`${res.matchResult.getInterval().getLineAndColumn()}`);
+  throw new Error(res.matchResult.message!);
 }
