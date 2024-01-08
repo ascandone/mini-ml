@@ -1,12 +1,14 @@
 import { Context } from "./typecheck";
 import { TVar, Type } from "./unify";
 
-const plusOp = fn(["Num"], ["Num"], ["Num"]);
-const multOp = fn(["Num"], ["Num"], ["Num"]);
-
 export const prelude: Context = {
-  "+": plusOp,
-  "*": multOp,
+  "+": fn(["Num"], ["Num"], ["Num"]),
+  "*": fn(["Num"], ["Num"], ["Num"]),
+  negate: fn(["Num"], ["Num"]),
+  not: fn(["Bool"], ["Bool"]),
+  true: ["Bool"],
+  false: ["Bool"],
+  unit: ["Unit"],
 };
 
 function fn(t1: Type, t2: Type, ...types: Type[]): Type {
