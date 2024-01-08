@@ -93,6 +93,8 @@ semantics.addOperation<SpannedAst>("expr()", {
   AddExp_plus: infixOp("+"),
   AddExp_minus: infixOp("-"),
   MulExp_times: infixOp("*"),
+  MulExp_divide: infixOp("/"),
+  ExpExp_power: infixOp("^"),
 
   PriExp_paren(_l, arg1, _r) {
     return arg1.expr();

@@ -44,67 +44,29 @@ test("ident", () => {
 });
 
 test("infix +", () => {
-  const INPUT = "1 + 2";
   // == (+) 1 2
   // == ((+) 1) 2
 
-  expect(unsafeParse(INPUT)).toEqual<SpannedAst>({
-    type: "application",
-    caller: {
-      type: "application",
-      caller: {
-        type: "ident",
-        ident: "+",
-        span: spanOf(INPUT, "+"),
-      },
-      arg: { type: "constant", value: 1, span: spanOf(INPUT, "1") },
-      span: spanOf(INPUT, INPUT),
-    },
-    arg: { type: "constant", value: 2, span: spanOf(INPUT, "2") },
-    span: spanOf(INPUT, INPUT),
-  });
+  expectInfix("1 + 2", "+");
 });
 
 test("infix -", () => {
-  const INPUT = "1 - 2";
   // == (-) 1 2
   // == ((-) 1) 2
 
-  expect(unsafeParse(INPUT)).toEqual<SpannedAst>({
-    type: "application",
-    caller: {
-      type: "application",
-      caller: {
-        type: "ident",
-        ident: "-",
-        span: spanOf(INPUT, "-"),
-      },
-      arg: { type: "constant", value: 1, span: spanOf(INPUT, "1") },
-      span: spanOf(INPUT, INPUT),
-    },
-    arg: { type: "constant", value: 2, span: spanOf(INPUT, "2") },
-    span: spanOf(INPUT, INPUT),
-  });
+  expectInfix("1 - 2", "-");
 });
 
 test("infix *", () => {
-  const INPUT = "1 * 2";
+  expectInfix("1 * 2", "*");
+});
 
-  expect(unsafeParse(INPUT)).toEqual<SpannedAst>({
-    type: "application",
-    caller: {
-      type: "application",
-      caller: {
-        type: "ident",
-        ident: "*",
-        span: spanOf(INPUT, "*"),
-      },
-      arg: { type: "constant", value: 1, span: spanOf(INPUT, "1") },
-      span: spanOf(INPUT, INPUT),
-    },
-    arg: { type: "constant", value: 2, span: spanOf(INPUT, "2") },
-    span: spanOf(INPUT, INPUT),
-  });
+test("infix /", () => {
+  expectInfix("1 / 2", "/");
+});
+
+test("infix ^", () => {
+  expectInfix("1 ^ 2", "^");
 });
 
 test("infix expr prec", () => {
@@ -277,3 +239,22 @@ test("infix and application precedence", () => {
     span: expect.anything(),
   });
 });
+
+// 1 `op` 2
+function expectInfix(src: string, op: string) {
+  expect(unsafeParse(src)).toEqual<SpannedAst>({
+    type: "application",
+    caller: {
+      type: "application",
+      caller: {
+        type: "ident",
+        ident: op,
+        span: spanOf(src, op),
+      },
+      arg: { type: "constant", value: 1, span: spanOf(src, "1") },
+      span: spanOf(src, src),
+    },
+    arg: { type: "constant", value: 2, span: spanOf(src, "2") },
+    span: spanOf(src, src),
+  });
+}

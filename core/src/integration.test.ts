@@ -27,6 +27,10 @@ test("sum abstr", () => {
   assertType(`\\x -> \\y -> x + y`, "Num -> Num -> Num");
 });
 
+test("infix ops", () => {
+  assertType(`1 + 2 ^ 4 - 4 / 2`, "Num");
+});
+
 function assertType(src: string, type: string) {
   const parsedAst = unsafeParse(src);
   const typedAst = typecheck(parsedAst, prelude);

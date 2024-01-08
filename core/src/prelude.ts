@@ -1,9 +1,12 @@
 import { Context } from "./typecheck";
-import { TVar, Type } from "./unify";
+import { Type } from "./unify";
 
 export const prelude: Context = {
   "+": fn(["Num"], ["Num"], ["Num"]),
   "*": fn(["Num"], ["Num"], ["Num"]),
+  "^": fn(["Num"], ["Num"], ["Num"]),
+  "-": fn(["Num"], ["Num"], ["Num"]),
+  "/": fn(["Num"], ["Num"], ["Num"]),
   negate: fn(["Num"], ["Num"]),
   not: fn(["Bool"], ["Bool"]),
   true: ["Bool"],
