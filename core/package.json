@@ -2,6 +2,7 @@
   "name": "@mini-ml/core",
   "main": "dist/index.js",
   "version": "0.0.1",
+  "license": "MIT",
   "scripts": {
     "test": "vitest",
     "generate:parser": "ohm generateBundles --withTypes src/parser/grammar.ohm",
