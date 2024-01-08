@@ -1,12 +1,22 @@
 import { Context } from "./typecheck";
-import { Type } from "./unify";
+import { TVar, Type, generalize, unify } from "./unify";
 
 export const prelude: Context = {
   "+": fn(["Num"], ["Num"], ["Num"]),
-  "*": fn(["Num"], ["Num"], ["Num"]),
-  "^": fn(["Num"], ["Num"], ["Num"]),
   "-": fn(["Num"], ["Num"], ["Num"]),
+  "*": fn(["Num"], ["Num"], ["Num"]),
   "/": fn(["Num"], ["Num"], ["Num"]),
+  "^": fn(["Num"], ["Num"], ["Num"]),
+  "%": fn(["Num"], ["Num"], ["Num"]),
+  "||": fn(["Bool"], ["Bool"], ["Bool"]),
+  "&&": fn(["Bool"], ["Bool"], ["Bool"]),
+  "==": gen(([$a]) => fn($a!, $a!, $a!)),
+  "!=": gen(([$a]) => fn($a!, $a!, $a!)),
+  ">": gen(([$a]) => fn($a!, $a!, $a!)),
+  ">=": gen(([$a]) => fn($a!, $a!, $a!)),
+  "<": gen(([$a]) => fn($a!, $a!, $a!)),
+  "<=": gen(([$a]) => fn($a!, $a!, $a!)),
+
   negate: fn(["Num"], ["Num"]),
   not: fn(["Bool"], ["Bool"]),
   true: ["Bool"],
@@ -21,4 +31,14 @@ function fn(t1: Type, t2: Type, ...types: Type[]): Type {
   } else {
     return ["->", t1, fn(t2, first, ...rest)];
   }
+}
+
+function gen(f: (args: Generator<TVar>) => Type): Type {
+  function* freshVars() {
+    while (true) {
+      yield TVar.fresh();
+    }
+  }
+  const t = f(freshVars());
+  return generalize(t);
 }
