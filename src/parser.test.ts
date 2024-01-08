@@ -53,6 +53,28 @@ test("infix +", () => {
   });
 });
 
+test("infix -", () => {
+  const INPUT = "1 - 2";
+  // == (-) 1 2
+  // == ((-) 1) 2
+
+  expect(unsafeParse(INPUT)).toEqual<SpannedAst>({
+    type: "application",
+    caller: {
+      type: "application",
+      caller: {
+        type: "ident",
+        ident: "-",
+        span: spanOf(INPUT, "-"),
+      },
+      arg: { type: "constant", value: 1, span: spanOf(INPUT, "1") },
+      span: spanOf(INPUT, INPUT),
+    },
+    arg: { type: "constant", value: 2, span: spanOf(INPUT, "2") },
+    span: spanOf(INPUT, INPUT),
+  });
+});
+
 test("infix *", () => {
   const INPUT = "1 * 2";
 
@@ -69,6 +91,25 @@ test("infix *", () => {
       span: spanOf(INPUT, INPUT),
     },
     arg: { type: "constant", value: 2, span: spanOf(INPUT, "2") },
+    span: spanOf(INPUT, INPUT),
+  });
+});
+
+test("prefix -", () => {
+  const INPUT = "- 42";
+
+  expect(unsafeParse(INPUT)).toEqual<SpannedAst>({
+    type: "application",
+    caller: {
+      type: "ident",
+      ident: "negate",
+      span: spanOf(INPUT, "-"),
+    },
+    arg: {
+      type: "constant",
+      value: 42,
+      span: spanOf(INPUT, "42"),
+    },
     span: spanOf(INPUT, INPUT),
   });
 });
@@ -141,3 +182,50 @@ function spanOf(src: string, substr: string): Span {
   const index = src.indexOf(substr);
   return [index, index + substr.length];
 }
+
+test.skip("application", () => {
+  const INPUT = `f x`;
+
+  expect(unsafeParse(INPUT)).toEqual<SpannedAst>({
+    type: "application",
+    caller: {
+      type: "ident",
+      ident: "f",
+      span: spanOf(INPUT, "f"),
+    },
+    arg: {
+      type: "ident",
+      ident: "x",
+      span: spanOf(INPUT, "x"),
+    },
+    span: spanOf(INPUT, INPUT),
+  });
+});
+
+test.skip("application (2 args)", () => {
+  const INPUT = `f x y`;
+
+  expect(unsafeParse(INPUT)).toEqual<SpannedAst>({
+    type: "application",
+    caller: {
+      type: "application",
+      caller: {
+        type: "ident",
+        ident: "f",
+        span: spanOf(INPUT, "f"),
+      },
+      arg: {
+        type: "ident",
+        ident: "x",
+        span: spanOf(INPUT, "x"),
+      },
+      span: spanOf(INPUT, INPUT),
+    },
+    arg: {
+      type: "ident",
+      ident: "y",
+      span: spanOf(INPUT, "y"),
+    },
+    span: spanOf(INPUT, INPUT),
+  });
+});

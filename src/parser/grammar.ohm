@@ -23,7 +23,6 @@ Arithmetic {
 
   PriExp
     = "(" Exp ")"  -- paren
-    | "+" PriExp   -- pos
     | "-" PriExp   -- neg
     | ident
     | number

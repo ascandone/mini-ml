@@ -43,6 +43,25 @@ function infixOp(ident: string) {
   };
 }
 
+function prefixOp(ident: string) {
+  return function (
+    this: NonterminalNode,
+    op: TerminalNode,
+    x: NonterminalNode
+  ): SpannedAst {
+    return {
+      type: "application",
+      caller: {
+        type: "ident",
+        ident,
+        span: getSpan(op),
+      },
+      arg: x.expr(),
+      span: getSpan(this),
+    };
+  };
+}
+
 semantics.addOperation<SpannedAst>("expr()", {
   Exp_let(_let, ident, _eq, def, _in, body) {
     return {
@@ -63,8 +82,23 @@ semantics.addOperation<SpannedAst>("expr()", {
     };
   },
 
+  // ExpExp_appl(items) {
+  //   const [first, ...other] = items.children;
+  //   return other.reduce<SpannedAst>(
+  //     (acc, node) => ({
+  //       type: "application",
+  //       caller: acc,
+  //       arg: node.expr(),
+  //       span: getSpan(this),
+  //     }),
+  //     first!.expr()
+  //   );
+  // },
+
   AddExp_plus: infixOp("+"),
+  AddExp_minus: infixOp("-"),
   MulExp_times: infixOp("*"),
+  PriExp_neg: prefixOp("negate"),
 
   ident(_l, _ns) {
     return {
