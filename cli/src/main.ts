@@ -1,21 +1,18 @@
 #!/usr/bin/env node
 
-import { readFileSync } from "fs";
-import { exit } from "process";
-import { unsafeParse, typePPrint, typecheck, prelude } from "@mini-ml/core";
+import { Command } from "commander";
+import { run } from "./run";
+const packageJson = require("../package.json");
 
-const [, , path] = process.argv;
+const program = new Command();
 
-if (path === undefined) {
-  console.error("path argument required!");
-  exit(1);
-}
+program.version(packageJson.version);
 
-const f = readFileSync(path);
+program
+  .command("infer <path>")
+  .description("Infer the type of given file")
+  .action((path: string) => {
+    run(path);
+  });
 
-const untyped = unsafeParse(f.toString());
-
-const typed = typecheck(untyped, prelude);
-
-const pt = typePPrint(typed.$);
-console.log(pt);
+program.parse();
