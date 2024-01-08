@@ -91,7 +91,7 @@ export class TVar {
 }
 
 export class UnifyError extends Error {
-  constructor(err: string, public left: Type, right: Type) {
+  constructor(err: string, public left: Type, public right: Type) {
     super(err);
   }
 }
