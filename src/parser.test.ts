@@ -1,4 +1,4 @@
-import { test, expect } from "vitest";
+import { test, expect, describe } from "vitest";
 import { SpannedAst, unsafeParse, Span } from "./parser";
 
 test("int number", () => {
@@ -253,5 +253,25 @@ test("parens", () => {
     type: "ident",
     ident: "f",
     span: spanOf(INPUT, "f"),
+  });
+});
+
+test("infix and fn precedence", () => {
+  const INPUT = "- \\x -> x";
+  expect(unsafeParse(INPUT)).toEqual<SpannedAst>({
+    type: "application",
+    caller: { type: "ident", ident: "negate", span: expect.anything() },
+    arg: expect.anything(),
+    span: expect.anything(),
+  });
+});
+
+test("infix and let precedence", () => {
+  const INPUT = "- let x = 0 in 0";
+  expect(unsafeParse(INPUT)).toEqual<SpannedAst>({
+    type: "application",
+    caller: { type: "ident", ident: "negate", span: expect.anything() },
+    arg: expect.anything(),
+    span: expect.anything(),
   });
 });

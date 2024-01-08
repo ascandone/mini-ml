@@ -63,7 +63,7 @@ function prefixOp(ident: string) {
 }
 
 semantics.addOperation<SpannedAst>("expr()", {
-  Exp_let(_let, ident, _eq, def, _in, body) {
+  PriExp_let(_let, ident, _eq, def, _in, body) {
     return {
       type: "let",
       binding: { name: ident.sourceString, span: getSpan(ident) },
@@ -73,7 +73,7 @@ semantics.addOperation<SpannedAst>("expr()", {
     };
   },
 
-  Exp_abs(_fn, param, _arrow, body) {
+  PriExp_abs(_fn, param, _arrow, body) {
     return {
       type: "abstraction",
       param: { name: param.sourceString, span: getSpan(param) },

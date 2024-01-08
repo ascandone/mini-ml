@@ -3,9 +3,7 @@ Arithmetic {
     = Exp -- expr
 
   Exp
-    = "let" ident "=" Exp "in" Exp -- let
-    | "\\" ident "->" Exp --abs
-    | AddExp+ -- appl
+    = AddExp+ -- appl
 
   AddExp
     = AddExp "+" MulExp  -- plus
@@ -24,6 +22,8 @@ Arithmetic {
   PriExp
     = "(" Exp ")"  -- paren
     | "-" PriExp   -- neg
+    | "let" ident "=" Exp "in" Exp -- let
+    | "\\" ident "->" Exp -- abs
     | ident
     | number
 
