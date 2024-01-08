@@ -1,10 +1,12 @@
 {
-  "name": "core",
-  "main": "index.js",
+  "name": "@mini-ml/core",
+  "main": "dist/index.js",
   "version": "0.0.1",
   "scripts": {
     "test": "vitest",
-    "generate:parser": "ohm generateBundles --withTypes src/parser/grammar.ohm"
+    "generate:parser": "ohm generateBundles --withTypes src/parser/grammar.ohm",
+    "build": "tsc",
+    "build:watch": "tsc --watch"
   },
   "devDependencies": {
     "@ohm-js/cli": "^2.0.0",
