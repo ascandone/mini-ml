@@ -12,7 +12,9 @@
   },
   "dependencies": {
     "@mini-ml/core": "*",
-    "commander": "^11.1.0"
+    "commander": "^11.1.0",
+    "vscode-languageserver": "^9.0.1",
+    "vscode-languageserver-textdocument": "^1.0.11"
   },
   "devDependencies": {
     "@types/node": "^20.10.7",

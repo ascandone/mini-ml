@@ -4,8 +4,8 @@ import { TVar, Type, generalize, instantiate, unify } from "./unify";
 export type UntypedAst<T = {}> = Ast<T>;
 export type TypedAst<T = {}> = Ast<T & { $: TVar }>;
 
-export class UnboundVariableError extends Error {
-  constructor(public name: string) {
+export class UnboundVariableError<T> extends Error {
+  constructor(public name: string, public node: Ast<T>) {
     super(`Unbound variable: ${name}`);
   }
 }
@@ -22,7 +22,7 @@ function typecheckAnnotated<T>(ast: TypedAst<T>, context: Context) {
     case "ident": {
       const lookup = context[ast.ident];
       if (lookup === undefined) {
-        throw new UnboundVariableError(ast.ident);
+        throw new UnboundVariableError(ast.ident, ast);
       }
       unify(ast.$, instantiate(lookup));
       return;
