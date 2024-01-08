@@ -235,6 +235,22 @@ test("infix and application precedence", () => {
   });
 });
 
+test("curried functions sugar", () => {
+  const INPUT = "\\x y -> z";
+
+  expect(unsafeParse(INPUT)).toEqual<SpannedAst>({
+    type: "abstraction",
+    param: { name: "x", span: spanOf(INPUT, "x") },
+    body: {
+      type: "abstraction",
+      param: { name: "y", span: spanOf(INPUT, "y") },
+      body: { type: "ident", ident: "z", span: spanOf(INPUT, "z") },
+      span: spanOf(INPUT, INPUT),
+    },
+    span: spanOf(INPUT, INPUT),
+  });
+});
+
 // 1 `op` 2
 function expectInfix(op: string) {
   const INPUT = `1 ${op} 2`;

@@ -66,13 +66,19 @@ semantics.addOperation<SpannedAst>("expr()", {
     };
   },
 
-  PriExp_abs(_fn, param, _arrow, body) {
-    return {
-      type: "abstraction",
-      param: { name: param.sourceString, span: getSpan(param) },
-      body: body.expr(),
-      span: getSpan(this),
-    };
+  PriExp_abs(_fn, params, _arrow, body) {
+    return params.children.reduceRight(
+      (prev, param) => ({
+        type: "abstraction",
+        param: {
+          name: param!.sourceString,
+          span: getSpan(param!),
+        },
+        body: prev,
+        span: getSpan(this),
+      }),
+      body.expr() as SpannedAst
+    );
   },
 
   ExpExp_appl(items) {
