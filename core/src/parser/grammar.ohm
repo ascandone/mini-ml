@@ -42,7 +42,7 @@ Expr {
 
   PriExp
     = "(" Exp ")"  -- paren
-    | "let" ident "=" Exp "in" Exp -- let
+    | "let" ident+ "=" Exp "in" Exp -- let
     | "\\" ident+ "->" Exp -- abs
     | ident
     | number

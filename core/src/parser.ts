@@ -56,17 +56,33 @@ semantics.addOperation<number>("number()", {
 });
 
 semantics.addOperation<SpannedAst>("expr()", {
-  PriExp_let(_let, ident, _eq, def, _in, body) {
+  PriExp_let(_let, idents, _eq, def, _in, body): SpannedAst {
+    const [ident, ...params] = idents.children;
+
+    const abstr = params.reduceRight(
+      (prev, param) =>
+        ({
+          type: "abstraction",
+          param: {
+            name: param!.sourceString,
+            span: getSpan(param!),
+          },
+          body: prev,
+          span: getSpan(this),
+        } satisfies SpannedAst),
+      def.expr() as SpannedAst
+    );
+
     return {
       type: "let",
-      binding: { name: ident.sourceString, span: getSpan(ident) },
-      definition: def.expr(),
+      binding: { name: ident!.sourceString, span: getSpan(ident!) },
+      definition: abstr,
       body: body.expr(),
       span: getSpan(this),
     };
   },
 
-  PriExp_abs(_fn, params, _arrow, body) {
+  PriExp_abs(_fn, params, _arrow, body): SpannedAst {
     return params.children.reduceRight(
       (prev, param) => ({
         type: "abstraction",

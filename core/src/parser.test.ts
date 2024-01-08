@@ -251,6 +251,30 @@ test("curried functions sugar", () => {
   });
 });
 
+test("let function sugar", () => {
+  const INPUT = "let f x y = z in 0";
+
+  const abs: SpannedAst = {
+    type: "abstraction",
+    param: { name: "x", span: spanOf(INPUT, "x") },
+    body: {
+      type: "abstraction",
+      param: { name: "y", span: spanOf(INPUT, "y") },
+      body: { type: "ident", ident: "z", span: spanOf(INPUT, "z") },
+      span: spanOf(INPUT, INPUT),
+    },
+    span: spanOf(INPUT, INPUT),
+  };
+
+  expect(unsafeParse(INPUT)).toEqual<SpannedAst>({
+    type: "let",
+    binding: { name: "f", span: spanOf(INPUT, "f") },
+    definition: abs,
+    body: { type: "constant", value: 0, span: spanOf(INPUT, "0") },
+    span: spanOf(INPUT, INPUT),
+  });
+});
+
 // 1 `op` 2
 function expectInfix(op: string) {
   const INPUT = `1 ${op} 2`;
