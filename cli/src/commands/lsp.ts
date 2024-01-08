@@ -8,11 +8,10 @@ import {
   typePPrint,
   typecheck,
 } from "@mini-ml/core";
-import { Type } from "@mini-ml/core/dist/unify";
+import { Type, UnifyError } from "@mini-ml/core/dist/unify";
 import {
   DiagnosticSeverity,
   MarkupKind,
-  Range,
   TextDocumentSyncKind,
   TextDocuments,
   createConnection,
@@ -178,12 +177,65 @@ documents.onDidChangeContent((change) => {
       return;
     }
 
+    if (e instanceof UnifyError) {
+      connection.sendDiagnostics({
+        uri: change.document.uri,
+        diagnostics: [
+          {
+            message: `
+Cannot unify following types:
+
+${typePPrint(e.left)}
+${typePPrint(e.right)}
+`,
+            source: "Typecheck",
+            severity: DiagnosticSeverity.Error,
+            range: {
+              start: change.document.positionAt(0),
+              end: change.document.positionAt(0),
+            },
+          },
+        ],
+      });
+      return;
+    }
+
+    if (e instanceof UnifyError) {
+      connection.sendDiagnostics({
+        uri: change.document.uri,
+        diagnostics: [
+          {
+            message: `
+${e.message}
+
+${typePPrint(e.left)}
+${typePPrint(e.right)}
+`,
+            source: "Typecheck",
+            severity: DiagnosticSeverity.Error,
+            range: {
+              start: change.document.positionAt(0),
+              end: change.document.positionAt(0),
+            },
+          },
+        ],
+      });
+      return;
+    }
+
     connection.sendDiagnostics({
       uri: change.document.uri,
-      diagnostics: [],
+      diagnostics: [
+        {
+          message: (e as Error).message,
+          source: "Typecheck",
+          range: {
+            start: change.document.positionAt(0),
+            end: change.document.positionAt(0),
+          },
+        },
+      ],
     });
-
-    connection.console.error((e as Error).toString());
   }
 });
 
