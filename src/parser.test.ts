@@ -246,3 +246,12 @@ test("application and prefix precedence", () => {
     span: expect.anything(),
   });
 });
+
+test("parens", () => {
+  const INPUT = "(f)";
+  expect(unsafeParse(INPUT)).toEqual<SpannedAst>({
+    type: "ident",
+    ident: "f",
+    span: spanOf(INPUT, "f"),
+  });
+});

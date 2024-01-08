@@ -100,6 +100,10 @@ semantics.addOperation<SpannedAst>("expr()", {
   MulExp_times: infixOp("*"),
   PriExp_neg: prefixOp("negate"),
 
+  PriExp_paren(_l, arg1, _r) {
+    return arg1.expr();
+  },
+
   ident(_l, _ns) {
     return {
       type: "ident",
