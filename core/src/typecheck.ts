@@ -42,12 +42,18 @@ function typecheckAnnotated<T>(ast: TypedAst<T>, context: Context) {
     case "let":
       unify(ast.definition.$, ast.binding.$);
       unify(ast.$, ast.body.$);
-
       typecheckAnnotated(ast.definition, context);
       typecheckAnnotated(ast.body, {
         ...context,
         [ast.binding.name]: generalize(ast.binding.$),
       });
+      return;
+    case "if":
+      unify(ast.condition.$, ["Bool"]);
+      unify(ast.then.$, ast.else.$);
+      typecheckAnnotated(ast.condition, context);
+      typecheckAnnotated(ast.then, context);
+      typecheckAnnotated(ast.else, context);
       return;
   }
 }
@@ -104,6 +110,14 @@ function annotate<T>(ast: UntypedAst<T>): TypedAst<T> {
         binding: { ...ast.binding, $: TVar.fresh() },
         definition: annotate(ast.definition),
         body: annotate(ast.body),
+        $: TVar.fresh(),
+      };
+    case "if":
+      return {
+        ...ast,
+        condition: annotate(ast.condition),
+        then: annotate(ast.then),
+        else: annotate(ast.else),
         $: TVar.fresh(),
       };
   }

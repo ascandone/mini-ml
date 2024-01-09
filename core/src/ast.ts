@@ -25,4 +25,10 @@ export type Ast<Meta = {}> = Meta &
         definition: Ast<Meta>;
         body: Ast<Meta>;
       }
+    | {
+        type: "if";
+        condition: Ast<Meta>;
+        then: Ast<Meta>;
+        else: Ast<Meta>;
+      }
   );

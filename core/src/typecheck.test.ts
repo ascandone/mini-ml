@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { UnboundVariableError, UntypedAst, typecheck } from "./typecheck";
-import { TVar, TVarResolution, generalize } from "./unify";
+import { TVar, TVarResolution, UnifyError, generalize } from "./unify";
 
 test("infer constant type", () => {
   const ast = typecheck({ type: "constant", value: 42 });
@@ -132,6 +132,54 @@ test("infer abstraction parameter", () => {
   expect(t1).toEqual("->");
   expect($param1.value).toEqual({ type: "bound", value: ["Num"] });
   expect($body1.value).toEqual(ast.body.$.resolve());
+});
+
+test("infer if expression's condition", () => {
+  const f = typecheck({
+    type: "abstraction",
+    param: { name: "x" },
+    body: {
+      type: "if",
+      condition: { type: "ident", ident: "x" },
+      then: { type: "constant", value: null },
+      else: { type: "constant", value: null },
+    },
+  } as const);
+
+  expect(f.body!.condition.$.resolve()).toEqual({
+    type: "bound",
+    value: ["Bool"],
+  });
+});
+
+test("infer if expression's arg", () => {
+  const f = typecheck({
+    type: "abstraction",
+    param: { name: "x" },
+    body: {
+      type: "if",
+      condition: { type: "constant", value: true },
+      then: { type: "ident", ident: "x" },
+      else: { type: "constant", value: 1 },
+    },
+  } as const);
+
+  expect(f.body!.then.$.resolve()).toEqual({ type: "bound", value: ["Num"] });
+});
+
+test("if should not typecheck if arg is not bool", () => {
+  const f: UntypedAst = {
+    type: "abstraction",
+    param: { name: "x" },
+    body: {
+      type: "if",
+      condition: { type: "constant", value: 0 },
+      then: { type: "constant", value: 1 },
+      else: { type: "constant", value: 1 },
+    },
+  };
+
+  expect(() => typecheck(f)).toThrow(UnifyError);
 });
 
 test("infer monomorphic type in let", () => {
