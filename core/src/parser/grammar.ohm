@@ -49,7 +49,16 @@ Expr {
     | number
 
   ident  (an identifier)
-    = ~keyword letter alnum*
+    = ~keyword identHead identBody*
+
+  identHead
+    = letter
+    | "_"
+  
+  identBody
+    = alnum
+    | "_"
+  
 
   number  (a number)
     = digit* "." digit+  -- fract

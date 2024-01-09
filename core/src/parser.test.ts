@@ -34,13 +34,11 @@ describe("numbers", () => {
 });
 
 test("ident", () => {
-  const INPUT = "abc";
-
-  expect(unsafeParse(INPUT)).toEqual<SpannedAst>({
-    type: "ident",
-    ident: "abc",
-    span: [0, 3],
-  });
+  expectIdent("abc");
+  expectIdent("a_c");
+  expectIdent("_ac");
+  expectIdent("ac_");
+  expectIdent("_");
 });
 
 test("infix ops", () => {
@@ -304,5 +302,13 @@ function expectInfix(op: string) {
     },
     arg: { type: "constant", value: 2, span: spanOf(INPUT, "2") },
     span: spanOf(INPUT, INPUT),
+  });
+}
+
+function expectIdent(name: string) {
+  expect(unsafeParse(name)).toEqual<SpannedAst>({
+    type: "ident",
+    ident: name,
+    span: [0, name.length],
   });
 }
