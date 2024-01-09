@@ -167,6 +167,17 @@ test("infer if expression's arg", () => {
   expect(f.body!.then.$.resolve()).toEqual({ type: "bound", value: ["Num"] });
 });
 
+test("infer if expression's value", () => {
+  const ast = typecheck({
+    type: "if",
+    condition: { type: "constant", value: true },
+    then: { type: "constant", value: null },
+    else: { type: "constant", value: null },
+  } as const);
+
+  expect(ast.$.resolve()).toEqual({ type: "bound", value: ["Unit"] });
+});
+
 test("if should not typecheck if arg is not bool", () => {
   const f: UntypedAst = {
     type: "abstraction",

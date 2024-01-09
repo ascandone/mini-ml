@@ -50,6 +50,7 @@ function typecheckAnnotated<T>(ast: TypedAst<T>, context: Context) {
       return;
     case "if":
       unify(ast.condition.$, ["Bool"]);
+      unify(ast.$, ast.then.$);
       unify(ast.then.$, ast.else.$);
       typecheckAnnotated(ast.condition, context);
       typecheckAnnotated(ast.then, context);
