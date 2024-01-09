@@ -44,6 +44,7 @@ Expr {
     = "(" Exp ")"  -- paren
     | "let" ident+ "=" Exp "in" Exp -- let
     | "\\" ident+ "->" Exp -- abs
+    | "if" Exp "then" Exp "else" Exp -- if
     | ident
     | number
 
@@ -55,5 +56,5 @@ Expr {
     | digit+             -- whole
     | "-" number  -- neg
 
-  keyword = "let" | "in"
+  keyword = "let" | "in" | "if" | "then" | "else"
 }

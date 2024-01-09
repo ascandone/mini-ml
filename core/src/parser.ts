@@ -97,6 +97,16 @@ semantics.addOperation<SpannedAst>("expr()", {
     );
   },
 
+  PriExp_if(_if, condition, _then, x, _else, y) {
+    return {
+      type: "if",
+      condition: condition.expr(),
+      then: x.expr(),
+      else: y.expr(),
+      span: getSpan(this),
+    };
+  },
+
   ExpExp_appl(items) {
     const [first, ...other] = items.children;
     return other.reduce<SpannedAst>(

@@ -152,6 +152,18 @@ test("application", () => {
   });
 });
 
+test("if expression", () => {
+  const INPUT = `if b then x else y`;
+
+  expect(unsafeParse(INPUT)).toEqual<SpannedAst>({
+    type: "if",
+    condition: { type: "ident", ident: "b", span: spanOf(INPUT, "b") },
+    then: { type: "ident", ident: "x", span: spanOf(INPUT, "x") },
+    else: { type: "ident", ident: "y", span: spanOf(INPUT, "y") },
+    span: spanOf(INPUT, INPUT),
+  });
+});
+
 test("application (2 args)", () => {
   const INPUT = `f x y`;
 
