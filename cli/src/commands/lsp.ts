@@ -51,12 +51,17 @@ function findTypeByOffset<T>(
         findTypeByOffset(ast.definition, offset) ??
         findTypeByOffset(ast.body, offset)
       );
-
     case "abstraction":
       if (spanContains(ast.param.span, offset)) {
         return ast.param.$;
       }
       return findTypeByOffset(ast.body, offset);
+    case "if":
+      return (
+        findTypeByOffset(ast.condition, offset) ??
+        findTypeByOffset(ast.then, offset) ??
+        findTypeByOffset(ast.else, offset)
+      );
   }
 }
 
