@@ -182,6 +182,44 @@ test("if should not typecheck if arg is not bool", () => {
   expect(() => typecheck(f)).toThrow(UnifyError);
 });
 
+// TODO fix bug in unify
+test.skip("infer recursion", () => {
+  // f : Num -> 'a
+  // let f = \x -> f 0 in 42
+
+  const definition: UntypedAst = {
+    type: "abstraction",
+    param: { name: "x" },
+    body: {
+      type: "application",
+      caller: { type: "ident", ident: "f" },
+      arg: { type: "constant", value: 0 },
+    },
+  };
+
+  const ast = typecheck({
+    type: "let",
+    binding: { name: "f" },
+    definition,
+    body: { type: "constant", value: 42 },
+  });
+
+  const resolved = (ast as any).binding.$.resolve();
+  expect(resolved.type).toBe("bound");
+
+  const [, $param, $body] = resolved.value;
+
+  expect($param.resolve()).toEqual<TVarResolution>({
+    type: "bound",
+    value: ["Num"],
+  });
+
+  expect($body.resolve()).toEqual<TVarResolution>({
+    type: "unbound",
+    id: 0,
+  });
+});
+
 test("infer monomorphic type in let", () => {
   // let x = 42 in x
   const ast = typecheck({
