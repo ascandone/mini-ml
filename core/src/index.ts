@@ -8,3 +8,4 @@ export {
   UntypedAst,
 } from "./typecheck";
 export { prelude } from "./prelude";
+export { Type, TVar, TVarResolution, UnifyError } from "./unify";
