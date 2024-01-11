@@ -42,7 +42,10 @@ function typecheckAnnotated<T>(ast: TypedAst<T>, context: Context) {
     case "let":
       unify(ast.definition.$, ast.binding.$);
       unify(ast.$, ast.body.$);
-      typecheckAnnotated(ast.definition, context);
+      typecheckAnnotated(ast.definition, {
+        ...context,
+        [ast.binding.name]: ast.definition.$,
+      });
       typecheckAnnotated(ast.body, {
         ...context,
         [ast.binding.name]: generalize(ast.binding.$),
