@@ -74,7 +74,7 @@ export function typecheck<T = {}>(
 
 function inferConstant(x: Const): Type {
   if (x === null) {
-    return ["Unit"];
+    return ["Nil"];
   } else if (typeof x === "number") {
     return ["Num"];
   } else if (typeof x === "boolean") {

@@ -21,7 +21,7 @@ export const prelude: Context = {
   not: fn(["Bool"], ["Bool"]),
   true: ["Bool"],
   false: ["Bool"],
-  unit: ["Unit"],
+  nil: ["Nil"],
 };
 
 function fn(t1: Type, t2: Type, ...types: Type[]): Type {

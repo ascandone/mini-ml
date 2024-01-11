@@ -175,7 +175,7 @@ test("infer if expression's value", () => {
     else: { type: "constant", value: null },
   } as const);
 
-  expect(ast.$.resolve()).toEqual({ type: "bound", value: ["Unit"] });
+  expect(ast.$.resolve()).toEqual({ type: "bound", value: ["Nil"] });
 });
 
 test("if should not typecheck if arg is not bool", () => {
@@ -258,7 +258,7 @@ test("generalizing a type in let should prevent type's variable to unify", () =>
     },
   };
 
-  // let id = \x -> x in id Unit
+  // let id = \x -> x in id nil
   const ast = typecheck({
     type: "let",
     binding: { name: "id" },
@@ -284,11 +284,11 @@ test("generalizing a type in let should prevent type's variable to unify", () =>
 
   expect(ast.body.$.resolve(), "body type").toEqual({
     type: "bound",
-    value: ["Unit"],
+    value: ["Nil"],
   });
   expect(ast.$.resolve(), "ast type").toEqual({
     type: "bound",
-    value: ["Unit"],
+    value: ["Nil"],
   });
 });
 
@@ -296,7 +296,7 @@ test("it should be possible to instantiate a polytype in many ways", () => {
   const $a = TVar.fresh();
   const id = generalize(["->", $a, $a]);
 
-  // let x = id 0; y = id True in Unit
+  // let x = id 0; y = id True in nil
   const ast: UntypedAst = {
     type: "let",
     binding: { name: "x" },
