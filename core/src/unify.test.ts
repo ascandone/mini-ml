@@ -249,6 +249,29 @@ test("transitive unifications (3)", () => {
   });
 });
 
+test("recursively linked TVars", () => {
+  const $a = TVar.fresh();
+  const $b = TVar.fresh();
+
+  unify($a, $b);
+  unify($b, $a);
+
+  expect($a.resolve()).toEqual($b.resolve());
+});
+
+test("recursively linked TVars (3 steps)", () => {
+  const $a = TVar.fresh();
+  const $b = TVar.fresh();
+  const $c = TVar.fresh();
+
+  unify($a, $b);
+  unify($b, $c);
+  unify($c, $a);
+
+  expect($a.resolve()).toEqual($b.resolve());
+  expect($a.resolve()).toEqual($c.resolve());
+});
+
 test("occurs check", () => {
   const $a = TVar.fresh();
   expect(() => unify($a, ["Int", $a])).toThrow(UnifyError);

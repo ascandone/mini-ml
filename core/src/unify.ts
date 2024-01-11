@@ -86,6 +86,11 @@ export class TVar {
       return;
     }
 
+    if (r1.type === "unbound" && r2.type === "unbound" && r1.id === r2.id) {
+      // TVars are already linked
+      return;
+    }
+
     $2.value = { type: "linked", to: $1 };
   }
 }
