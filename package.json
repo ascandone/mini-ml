@@ -8,7 +8,7 @@
   "scripts": {
     "generate:parser": "ohm generateBundles --withTypes src/parser/grammar.ohm",
     "test:watch": "vitest",
-    "test:run": "vitest --run",
+    "test:run": "vitest --run --coverage",
     "ts:build": "tsc",
     "ts:watch": "tsc --noEmit --watch",
     "format:check": "prettier --check --cache ./**/*.ts",
@@ -22,6 +22,7 @@
   "devDependencies": {
     "@ohm-js/cli": "^2.0.0",
     "@types/node": "^20.10.7",
+    "@vitest/coverage-istanbul": "^1.2.0",
     "@vitest/ui": "^1.1.3",
     "ohm-js": "^17.1.0",
     "prettier": "^3.2.0",
