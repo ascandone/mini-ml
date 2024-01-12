@@ -353,11 +353,24 @@ describe("generalization", () => {
 
     expect(t, "->");
 
-    expect($g1.value.type).toEqual("quantified");
-    expect($g2.value.type).toEqual("quantified");
+    expect($g1.resolve()).toEqual({ type: "quantified", id: 0 });
+    expect($g2.resolve()).toEqual({ type: "quantified", id: 0 });
+  });
 
-    expect($g1.value.id).toEqual(0);
-    expect($g2.value.id).toEqual(0);
+  test("do not generalize vars that appear in the context", () => {
+    const $a = TVar.fresh();
+    const $b = TVar.fresh();
+
+    const poly = generalize(["->", $a, $b], {
+      // Note $b is not free in context
+      x: ["List", $b],
+    }) as any[];
+
+    expect(poly.length).toEqual(3);
+    const [, $ga, $gb] = poly;
+
+    expect($ga.resolve()).toEqual({ type: "quantified", id: 0 });
+    expect($gb).toBe($b);
   });
 
   test("instantiate concrete type", () => {

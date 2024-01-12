@@ -48,7 +48,7 @@ function typecheckAnnotated<T>(ast: TypedAst<T>, context: Context) {
       });
       typecheckAnnotated(ast.body, {
         ...context,
-        [ast.binding.name]: generalize(ast.binding.$),
+        [ast.binding.name]: generalize(ast.binding.$, context),
       });
       return;
     case "if":

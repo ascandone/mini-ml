@@ -31,6 +31,19 @@ test("infix ops", () => {
   assertType(`1 + 2 ^ 4 - 4 / 2`, "Num");
 });
 
+test("do not generalize vars bound in context", () => {
+  assertType(
+    `
+    let f x =
+      let x1 = x in
+      x1
+    in
+    f 42
+`,
+    "Num"
+  );
+});
+
 function assertType(src: string, type: string) {
   const parsedAst = unsafeParse(src);
   const typedAst = typecheck(parsedAst, prelude);

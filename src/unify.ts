@@ -142,7 +142,39 @@ function occursCheck(v: TVar, x: Type) {
   }
 }
 
-export function generalize(t: Type): Type {
+export type Context = Record<string, Type>;
+
+function* getTypeFreeVars(t: Type): Generator<number> {
+  if (t instanceof TVar) {
+    const resolved = t.resolve();
+    if (resolved.type === "unbound") {
+      yield resolved.id;
+    }
+    return;
+  }
+
+  if (isConcrete(t)) {
+    const [, ...args] = t;
+    for (const arg of args) {
+      yield* getTypeFreeVars(arg);
+    }
+    return;
+  }
+}
+
+/** Returns the set of ids of free vars in a context  */
+function getContextFreeVars(context: Context): Set<number> {
+  const s = new Set<number>();
+  for (const t of Object.values(context)) {
+    for (const id of getTypeFreeVars(t)) {
+      s.add(id);
+    }
+  }
+  return s;
+}
+
+export function generalize(t: Type, context: Context = {}): Type {
+  const ctxFreeVars = getContextFreeVars(context);
   let nextId = 0;
   const bound = new Map<number, number>();
 
@@ -159,6 +191,10 @@ export function generalize(t: Type): Type {
       case "bound":
         return recur(resolvedT.value);
       case "unbound": {
+        if (ctxFreeVars.has(resolvedT.id)) {
+          return t;
+        }
+
         const thisId = bound.get(resolvedT.id) ?? nextId++;
         bound.set(resolvedT.id, thisId);
         return TVar.quantified(thisId);
