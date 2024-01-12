@@ -22,6 +22,7 @@ export const prelude: Context = {
   true: ["Bool"],
   false: ["Bool"],
   nil: ["Nil"],
+  pair: gen(([$a, $b]) => fn($a!, $b!, ["Pair", $a!, $b!])),
 };
 
 function fn(t1: Type, t2: Type, ...types: Type[]): Type {
