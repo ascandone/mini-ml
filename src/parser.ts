@@ -22,7 +22,7 @@ function infixOp(
   this: NonterminalNode,
   left: NonterminalNode,
   op: TerminalNode,
-  right: NonterminalNode
+  right: NonterminalNode,
 ): SpannedAst {
   return {
     type: "application",
@@ -69,8 +69,8 @@ semantics.addOperation<SpannedAst>("expr()", {
           },
           body: prev,
           span: getSpan(this),
-        } satisfies SpannedAst),
-      def.expr() as SpannedAst
+        }) satisfies SpannedAst,
+      def.expr() as SpannedAst,
     );
 
     return {
@@ -93,7 +93,7 @@ semantics.addOperation<SpannedAst>("expr()", {
         body: prev,
         span: getSpan(this),
       }),
-      body.expr() as SpannedAst
+      body.expr() as SpannedAst,
     );
   },
 
@@ -116,7 +116,7 @@ semantics.addOperation<SpannedAst>("expr()", {
         arg: node.expr(),
         span: getSpan(this),
       }),
-      first!.expr()
+      first!.expr(),
     );
   },
 

@@ -21,11 +21,11 @@ test("unify two concrete vars that do not match", () => {
   expect(() => unify(["Int"], ["Bool"]), "different type").toThrow();
   expect(
     () => unify(["Tuple", ["Int"], ["Int"]], ["Tuple"]),
-    "different arity"
+    "different arity",
   ).toThrow();
   expect(
     () => unify(["List", ["Int"]], ["List", ["Bool"]]),
-    "different args"
+    "different args",
   ).toThrow();
 });
 

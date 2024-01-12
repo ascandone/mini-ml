@@ -40,7 +40,7 @@ test("do not generalize vars bound in context", () => {
     in
     f 42
 `,
-    "Num"
+    "Num",
   );
 });
 

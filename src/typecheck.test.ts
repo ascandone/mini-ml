@@ -24,7 +24,7 @@ test("infer a variable contained in the context", () => {
     },
     {
       x: ["Num"],
-    }
+    },
   );
 
   expect(ast.$.resolve()).toEqual({
@@ -66,7 +66,7 @@ test("infer application", () => {
     },
     {
       add1: ["->", ["Num"], ["Num"]],
-    }
+    },
   ) as any;
 
   expect(ast.$.resolve().value).toEqual(["Num"]);

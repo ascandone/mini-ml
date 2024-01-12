@@ -9,7 +9,7 @@ export type TVarResolution =
 
 export class TVar {
   private constructor(
-    private value: TVarResolution | { type: "linked"; to: TVar }
+    private value: TVarResolution | { type: "linked"; to: TVar },
   ) {}
 
   static fresh(): TVar {
@@ -96,7 +96,11 @@ export class TVar {
 }
 
 export class UnifyError extends Error {
-  constructor(err: string, public left: Type, public right: Type) {
+  constructor(
+    err: string,
+    public left: Type,
+    public right: Type,
+  ) {
     super(err);
   }
 }

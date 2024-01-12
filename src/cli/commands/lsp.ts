@@ -22,7 +22,7 @@ function spanContains([start, end]: Span, offset: number) {
 
 function findTypeByOffset<T>(
   ast: SpannedAndTyped<T>,
-  offset: number
+  offset: number,
 ): Type | undefined {
   if (!spanContains(ast.span, offset)) {
     return;

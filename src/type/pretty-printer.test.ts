@@ -44,13 +44,13 @@ test("arrow", () => {
 
 test("2-arity arrow ", () => {
   expect(typePPrint(["->", ["Int"], ["->", ["Bool"], ["Int"]]])).toBe(
-    "Int -> Bool -> Int"
+    "Int -> Bool -> Int",
   );
 });
 
 test("higher order function", () => {
   expect(typePPrint(["->", ["->", ["Int"], ["Bool"]], ["Int"]])).toBe(
-    "(Int -> Bool) -> Int"
+    "(Int -> Bool) -> Int",
   );
 });
 
@@ -61,6 +61,6 @@ test("tv as arg", () => {
 
 test("n-arity type nested in arrow", () => {
   expect(typePPrint(["->", ["List", ["Int"]], ["Maybe", ["Bool"]]])).toBe(
-    "List Int -> Maybe Bool"
+    "List Int -> Maybe Bool",
   );
 });

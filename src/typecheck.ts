@@ -5,7 +5,10 @@ export type UntypedAst<T = {}> = Ast<T>;
 export type TypedAst<T = {}> = Ast<T & { $: TVar }>;
 
 export class UnboundVariableError<T> extends Error {
-  constructor(public name: string, public node: Ast<T>) {
+  constructor(
+    public name: string,
+    public node: Ast<T>,
+  ) {
     super(`Unbound variable: ${name}`);
   }
 }
@@ -64,7 +67,7 @@ function typecheckAnnotated<T>(ast: TypedAst<T>, context: Context) {
 
 export function typecheck<T = {}>(
   ast: UntypedAst<T>,
-  context: Context = {}
+  context: Context = {},
 ): TypedAst<T> {
   TVar.resetId();
   const typedAst = annotate(ast);
