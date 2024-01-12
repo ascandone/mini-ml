@@ -39,7 +39,7 @@ export class TVar {
       const [n2, ...rest2] = t2;
 
       if (n1 !== n2 || rest1.length !== rest2.length) {
-        throw new UnifyError("Types do not match", t1, t2);
+        throw new UnifyError("Types do not match", t1, t2, "type-mismatch");
       }
 
       for (let i = 0; i < rest1.length; i++) {
@@ -95,11 +95,14 @@ export class TVar {
   }
 }
 
+export type UnifyErrorType = "type-mismatch" | "occurs-check";
+
 export class UnifyError extends Error {
   constructor(
     err: string,
     public left: Type,
     public right: Type,
+    public error: UnifyErrorType,
   ) {
     super(err);
   }
@@ -142,7 +145,7 @@ function occursCheck(v: TVar, x: Type) {
   }
 
   if (resolvedV.id === resolvedX.id) {
-    throw new UnifyError("Occurs check", v, x);
+    throw new UnifyError("Occurs check", v, x, "occurs-check");
   }
 }
 

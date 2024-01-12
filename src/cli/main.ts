@@ -3,7 +3,7 @@
 import { Command } from "commander";
 import { run } from "./commands/run";
 import { lsp } from "./commands/lsp";
-import packageJson from "../../package.json";
+const packageJson = require("../../package.json");
 
 const program = new Command();
 

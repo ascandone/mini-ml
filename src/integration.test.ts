@@ -46,7 +46,7 @@ test("do not generalize vars bound in context", () => {
 
 function assertType(src: string, type: string) {
   const parsedAst = unsafeParse(src);
-  const typedAst = typecheck(parsedAst, prelude);
+  const [typedAst] = typecheck(parsedAst, prelude);
   const t = typePPrint(typedAst.$);
   expect(t).toBe(type);
 }

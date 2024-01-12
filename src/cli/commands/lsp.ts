@@ -8,9 +8,9 @@ import {
 
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { Span, SpannedAst, parse } from "../../parser";
-import { Type, UnifyError } from "../../unify";
+import { Type, UnifyErrorType } from "../../unify";
 import { typePPrint } from "../../type/pretty-printer";
-import { TypedAst, UnboundVariableError, typecheck } from "../../typecheck";
+import { TypedAst, typecheck, TypeError } from "../../typecheck";
 import { prelude } from "../../prelude";
 
 const documents = new TextDocuments(TextDocument);
@@ -99,118 +99,24 @@ export function lsp() {
       return;
     }
 
-    try {
-      const typed = typecheck(parsed.value, prelude);
+    const [typed, errors] = typecheck(parsed.value, prelude);
+    docs.set(change.document.uri, [change.document, typed]);
+    connection.sendDiagnostics({
+      uri: change.document.uri,
+      diagnostics: errors.map((e) => {
+        const [start, end] = e.node.span;
 
-      docs.set(change.document.uri, [change.document, typed]);
-
-      connection.sendDiagnostics({
-        uri: change.document.uri,
-        diagnostics: [],
-      });
-    } catch (e) {
-      if (e instanceof UnboundVariableError) {
-        const et = e as UnboundVariableError<SpannedAst>;
-        const [start, end] = et.node.span;
-
-        connection.sendDiagnostics({
-          uri: change.document.uri,
-          diagnostics: [
-            {
-              message: e.message,
-              source: "Typecheck",
-              severity: DiagnosticSeverity.Error,
-              range: {
-                start: change.document.positionAt(start),
-                end: change.document.positionAt(end),
-              },
-            },
-          ],
-        });
-        return;
-      }
-
-      if (e instanceof UnboundVariableError) {
-        const et = e as UnboundVariableError<SpannedAst>;
-        const [start, end] = et.node.span;
-
-        connection.sendDiagnostics({
-          uri: change.document.uri,
-          diagnostics: [
-            {
-              message: e.message,
-              source: "Typecheck",
-              severity: DiagnosticSeverity.Error,
-              range: {
-                start: change.document.positionAt(start),
-                end: change.document.positionAt(end),
-              },
-            },
-          ],
-        });
-        return;
-      }
-
-      if (e instanceof UnifyError) {
-        connection.sendDiagnostics({
-          uri: change.document.uri,
-          diagnostics: [
-            {
-              message: `
-Cannot unify following types:
-
-${typePPrint(e.left)}
-${typePPrint(e.right)}
-`,
-              source: "Typecheck",
-              severity: DiagnosticSeverity.Error,
-              range: {
-                start: change.document.positionAt(0),
-                end: change.document.positionAt(0),
-              },
-            },
-          ],
-        });
-        return;
-      }
-
-      if (e instanceof UnifyError) {
-        connection.sendDiagnostics({
-          uri: change.document.uri,
-          diagnostics: [
-            {
-              message: `
-${e.message}
-
-${typePPrint(e.left)}
-${typePPrint(e.right)}
-`,
-              source: "Typecheck",
-              severity: DiagnosticSeverity.Error,
-              range: {
-                start: change.document.positionAt(0),
-                end: change.document.positionAt(0),
-              },
-            },
-          ],
-        });
-        return;
-      }
-
-      connection.sendDiagnostics({
-        uri: change.document.uri,
-        diagnostics: [
-          {
-            message: (e as Error).message,
-            source: "Typecheck",
-            range: {
-              start: change.document.positionAt(0),
-              end: change.document.positionAt(0),
-            },
+        return {
+          message: getTypeErrorMessage(e),
+          source: "Typecheck",
+          severity: DiagnosticSeverity.Error,
+          range: {
+            start: change.document.positionAt(start),
+            end: change.document.positionAt(end),
           },
-        ],
-      });
-    }
+        };
+      }),
+    });
   });
 
   connection.onHover(({ textDocument, position }) => {
@@ -244,3 +150,19 @@ ${tpp}
 }
 
 type SpannedAndTyped<T = {}> = SpannedAst<T> & TypedAst<T>;
+
+function getTypeErrorMessage(e: TypeError<unknown>) {
+  switch (e.type) {
+    case "unbound-variable":
+      return `Unbound variable: ${e.type}`;
+
+    case "occurs-check":
+      return "Cannot construct the infinite type";
+    case "type-mismatch":
+      return `Type mismatch
+
+Expected:  ${typePPrint(e.left)}
+     Got:  ${typePPrint(e.right)}
+`;
+  }
+}

@@ -7,7 +7,8 @@ import { prelude } from "../../prelude";
 export function run(path: string) {
   const f = readFileSync(path);
   const untyped = unsafeParse(f.toString());
-  const typed = typecheck(untyped, prelude);
+  const [typed] = typecheck(untyped, prelude);
+  // TODO print errors
   const pt = typePPrint(typed.$);
   console.log(pt);
 }

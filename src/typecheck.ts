@@ -1,66 +1,103 @@
 import { Ast, Const } from "./ast";
-import { TVar, Type, generalize, instantiate, unify } from "./unify";
+import {
+  TVar,
+  Type,
+  UnifyError,
+  UnifyErrorType,
+  generalize,
+  instantiate,
+  unify,
+} from "./unify";
 
 export type UntypedAst<T = {}> = Ast<T>;
 export type TypedAst<T = {}> = Ast<T & { $: TVar }>;
 
-export class UnboundVariableError<T> extends Error {
-  constructor(
-    public name: string,
-    public node: Ast<T>,
-  ) {
-    super(`Unbound variable: ${name}`);
+export type Context = Record<string, Type>;
+
+export type TypeError<Node> =
+  | {
+      type: "unbound-variable";
+      ident: string;
+      node: Node;
+    }
+  | {
+      type: UnifyErrorType;
+      node: Node;
+      left: Type;
+      right: Type;
+    };
+
+function* unifyNode<T>(
+  ast: TypedAst<T>,
+  t1: Type,
+  t2: Type,
+): Generator<TypeError<TypedAst<T>>> {
+  try {
+    unify(t1, t2);
+  } catch (e) {
+    if (!(e instanceof UnifyError)) {
+      throw e;
+    }
+
+    yield {
+      type: e.error,
+      left: e.left,
+      right: e.right,
+      node: ast,
+    };
   }
 }
 
-export type Context = Record<string, Type>;
-
-function typecheckAnnotated<T>(ast: TypedAst<T>, context: Context) {
+function* typecheckAnnotated<T>(
+  ast: TypedAst<T>,
+  context: Context,
+): Generator<TypeError<TypedAst<T>>> {
   switch (ast.type) {
     case "constant": {
       const t = inferConstant(ast.value);
-      unify(ast.$, t);
+      yield* unifyNode(ast, ast.$, t);
       return;
     }
     case "ident": {
       const lookup = context[ast.ident];
       if (lookup === undefined) {
-        throw new UnboundVariableError(ast.ident, ast);
+        yield { type: "unbound-variable", ident: ast.ident, node: ast };
+      } else {
+        yield* unifyNode(ast, ast.$, instantiate(lookup));
       }
-      unify(ast.$, instantiate(lookup));
       return;
     }
     case "abstraction":
-      unify(ast.$, ["->", ast.param.$, ast.body.$]);
-      typecheckAnnotated(ast.body, {
+      yield* unifyNode(ast, ast.$, ["->", ast.param.$, ast.body.$]);
+      yield* typecheckAnnotated(ast.body, {
         ...context,
         [ast.param.name]: ast.param.$,
       });
       return;
     case "application":
-      unify(ast.caller.$, ["->", ast.arg.$, ast.$]);
-      typecheckAnnotated(ast.caller, context);
-      typecheckAnnotated(ast.arg, context);
+      yield* unifyNode(ast, ast.caller.$, ["->", ast.arg.$, ast.$]);
+      yield* typecheckAnnotated(ast.caller, context);
+      yield* typecheckAnnotated(ast.arg, context);
       return;
     case "let":
-      unify(ast.definition.$, ast.binding.$);
-      unify(ast.$, ast.body.$);
-      typecheckAnnotated(ast.definition, {
+      yield* unifyNode(ast, ast.definition.$, ast.binding.$);
+      yield* unifyNode(ast, ast.$, ast.body.$);
+      yield* typecheckAnnotated(ast.definition, {
         ...context,
         [ast.binding.name]: ast.definition.$,
       });
-      typecheckAnnotated(ast.body, {
+      yield* typecheckAnnotated(ast.body, {
         ...context,
         [ast.binding.name]: generalize(ast.binding.$, context),
       });
       return;
     case "if":
-      unify(ast.condition.$, ["Bool"]);
-      unify(ast.$, ast.then.$);
-      unify(ast.then.$, ast.else.$);
-      typecheckAnnotated(ast.condition, context);
-      typecheckAnnotated(ast.then, context);
-      typecheckAnnotated(ast.else, context);
+      yield* unifyNode(ast, ast.condition.$, ["Bool"]);
+      yield* unifyNode(ast, ast.$, ast.then.$);
+      yield* unifyNode(ast, ast.then.$, ast.else.$);
+      yield* typecheckAnnotated(ast.condition, context);
+      yield* typecheckAnnotated(ast.then, context);
+      yield* typecheckAnnotated(ast.else, context);
       return;
   }
 }
@@ -68,11 +105,11 @@ function typecheckAnnotated<T>(ast: TypedAst<T>, context: Context) {
 export function typecheck<T = {}>(
   ast: UntypedAst<T>,
   context: Context = {},
-): TypedAst<T> {
+): [TypedAst<T>, TypeError<TypedAst<T>>[]] {
   TVar.resetId();
   const typedAst = annotate(ast);
-  typecheckAnnotated(typedAst, context);
-  return typedAst;
+  const errors = [...typecheckAnnotated(typedAst, context)];
+  return [typedAst, errors];
 }
 
 function inferConstant(x: Const): Type {

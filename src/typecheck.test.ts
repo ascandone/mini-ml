@@ -1,10 +1,11 @@
 import { expect, test } from "vitest";
-import { UnboundVariableError, UntypedAst, typecheck } from "./typecheck";
+import { UntypedAst, typecheck, TypeError, TypedAst } from "./typecheck";
 import { TVar, TVarResolution, UnifyError, generalize } from "./unify";
+import { SpannedAst } from "./parser";
+import { Ast } from "./ast";
 
 test("infer constant type", () => {
-  const ast = typecheck({ type: "constant", value: 42 });
-
+  const [ast] = typecheck({ type: "constant", value: 42 });
   expect(ast.$.resolve()).toEqual<TVarResolution>({
     type: "bound",
     value: ["Num"],
@@ -12,12 +13,20 @@ test("infer constant type", () => {
 });
 
 test("unbound vars should fail typecheck", () => {
-  const ast: UntypedAst = { type: "ident", ident: "not-found" };
-  expect(() => typecheck(ast)).toThrow(UnboundVariableError);
+  const [, errors] = typecheck({ type: "ident", ident: "not_found" });
+  expect(errors.length).toBe(1);
+  expect(errors[0]).toEqual<TypeError<Ast>>({
+    type: "unbound-variable",
+    ident: "not_found",
+    node: expect.objectContaining({
+      type: "ident",
+      ident: "not_found",
+    }),
+  });
 });
 
 test("infer a variable contained in the context", () => {
-  const ast = typecheck(
+  const [ast] = typecheck(
     {
       type: "ident",
       ident: "x",
@@ -34,7 +43,7 @@ test("infer a variable contained in the context", () => {
 });
 
 test("infer abstraction returning a constant", () => {
-  const ast = typecheck({
+  const [ast] = typecheck({
     type: "abstraction",
     param: { name: "x" },
     body: {
@@ -52,7 +61,7 @@ test("infer abstraction returning a constant", () => {
 });
 
 test("infer application", () => {
-  const ast = typecheck(
+  const [ast] = typecheck(
     {
       type: "application",
       caller: {
@@ -78,10 +87,79 @@ test("infer application", () => {
   expect($body.resolve()).toEqual({ type: "bound", value: ["Num"] });
 });
 
+test("detect type mismatch errors", () => {
+  const [ast, errors] = typecheck<{}>(
+    {
+      type: "application",
+      caller: {
+        type: "ident",
+        ident: "not",
+      },
+      arg: {
+        type: "constant",
+        value: 42,
+      },
+    },
+    {
+      not: ["->", ["Bool"], ["Bool"]],
+    },
+  );
+
+  expect(errors.length).toBe(1);
+  expect(errors[0]).toEqual<TypeError<TypedAst>>({
+    type: "type-mismatch",
+    left: ["Bool"],
+    right: ["Num"],
+    node: expect.objectContaining({
+      type: "constant",
+      value: 42,
+    }),
+  });
+
+  // Inferred types are kept
+  expect((ast as any).$.resolve().type).toEqual("bound");
+});
+
+test("detect occurs check error", () => {
+  const [ast, errors] = typecheck<{ id: number }>({
+    type: "abstraction",
+    param: { name: "x", id: -1 },
+    body: {
+      type: "application",
+      caller: {
+        type: "ident",
+        ident: "x",
+        id: 0,
+      },
+      arg: {
+        type: "ident",
+        ident: "x",
+        id: 1,
+      },
+      id: -1,
+    },
+    id: -1,
+  });
+
+  expect(errors.length).toBe(1);
+
+  // TODO maybe the error should be moved to the param?
+  expect(errors[0]).toEqual<TypeError<TypedAst>>({
+    type: "occurs-check",
+    left: expect.anything(),
+    right: expect.anything(),
+    node: expect.objectContaining({
+      type: "ident",
+      ident: "x",
+      id: 1,
+    }),
+  });
+});
+
 test("infer identity function", () => {
   // \x -> x
   //=> 'a -> 'a
-  const ast = typecheck({
+  const [ast] = typecheck({
     type: "abstraction",
     param: { name: "x" },
 
@@ -103,7 +181,7 @@ test("infer identity function", () => {
 test("infer abstraction parameter", () => {
   // \f-> f 42
   //    => (Num -> a) -> a
-  const ast = typecheck({
+  const [ast] = typecheck({
     type: "abstraction",
     param: { name: "f" },
     body: {
@@ -135,7 +213,7 @@ test("infer abstraction parameter", () => {
 });
 
 test("infer if expression's condition", () => {
-  const f = typecheck({
+  const [f] = typecheck({
     type: "abstraction",
     param: { name: "x" },
     body: {
@@ -153,7 +231,7 @@ test("infer if expression's condition", () => {
 });
 
 test("infer if expression's arg", () => {
-  const f = typecheck({
+  const [f] = typecheck({
     type: "abstraction",
     param: { name: "x" },
     body: {
@@ -168,7 +246,7 @@ test("infer if expression's arg", () => {
 });
 
 test("infer if expression's value", () => {
-  const ast = typecheck({
+  const [ast] = typecheck({
     type: "if",
     condition: { type: "constant", value: true },
     then: { type: "constant", value: null },
@@ -179,7 +257,7 @@ test("infer if expression's value", () => {
 });
 
 test("if should not typecheck if arg is not bool", () => {
-  const f: UntypedAst = {
+  const [, errors] = typecheck<{}>({
     type: "abstraction",
     param: { name: "x" },
     body: {
@@ -188,9 +266,9 @@ test("if should not typecheck if arg is not bool", () => {
       then: { type: "constant", value: 1 },
       else: { type: "constant", value: 1 },
     },
-  };
+  });
 
-  expect(() => typecheck(f)).toThrow(UnifyError);
+  expect(errors.length).toBe(1);
 });
 
 test("infer recursion", () => {
@@ -207,7 +285,7 @@ test("infer recursion", () => {
     },
   };
 
-  const ast = typecheck({
+  const [ast] = typecheck({
     type: "let",
     binding: { name: "f" },
     definition,
@@ -229,7 +307,7 @@ test("infer recursion", () => {
 
 test("infer monomorphic type in let", () => {
   // let x = 42 in x
-  const ast = typecheck({
+  const [ast] = typecheck({
     type: "let",
     binding: { name: "x" },
     definition: {
@@ -259,7 +337,7 @@ test("generalizing a type in let should prevent type's variable to unify", () =>
   };
 
   // let id = \x -> x in id nil
-  const ast = typecheck({
+  const [ast] = typecheck({
     type: "let",
     binding: { name: "id" },
     definition: id,
@@ -297,25 +375,54 @@ test("it should be possible to instantiate a polytype in many ways", () => {
   const id = generalize(["->", $a, $a]);
 
   // let x = id 0; y = id True in nil
-  const ast: UntypedAst = {
-    type: "let",
-    binding: { name: "x" },
-    definition: {
-      type: "application",
-      caller: { type: "ident", ident: "id" },
-      arg: { type: "constant", value: 42 },
-    },
-    body: {
+  const [ast, errors] = typecheck<{}>(
+    {
       type: "let",
-      binding: { name: "y" },
+      binding: { name: "x" },
       definition: {
         type: "application",
         caller: { type: "ident", ident: "id" },
-        arg: { type: "constant", value: true },
+        arg: { type: "constant", value: 42 },
       },
-      body: { type: "constant", value: null },
+      body: {
+        type: "let",
+        binding: { name: "y" },
+        definition: {
+          type: "application",
+          caller: { type: "ident", ident: "id" },
+          arg: { type: "constant", value: true },
+        },
+        body: { type: "constant", value: null },
+      },
     },
-  };
+    { id },
+  );
 
-  expect(() => typecheck(ast, { id })).not.toThrow();
+  expect(errors.length).toBe(0);
+});
+
+test("detecting a type error should not invalidate the inferred types", () => {
+  const [ast, errors] = typecheck(
+    {
+      type: "application",
+      caller: { type: "ident", ident: "f" },
+      arg: { type: "ident", ident: "x" },
+    },
+    { x: ["Int"] },
+  );
+
+  expect(errors.length).toBe(1);
+  expect((ast as any).arg.$.resolve()).toEqual({
+    type: "bound",
+    value: ["Int"],
+  });
+
+  expect(errors[0]).toEqual<TypeError<Ast>>({
+    type: "unbound-variable",
+    ident: "f",
+    node: expect.objectContaining({
+      type: "ident",
+      ident: "f",
+    }),
+  });
 });
