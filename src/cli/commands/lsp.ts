@@ -1,15 +1,4 @@
 import {
-  Span,
-  SpannedAst,
-  TypedAst,
-  UnboundVariableError,
-  parse,
-  prelude,
-  typePPrint,
-  typecheck,
-} from "@mini-ml/core";
-import { Type, UnifyError } from "@mini-ml/core/dist/unify";
-import {
   DiagnosticSeverity,
   MarkupKind,
   TextDocumentSyncKind,
@@ -18,6 +7,11 @@ import {
 } from "vscode-languageserver";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
+import { Span, SpannedAst, parse } from "../../parser";
+import { Type, UnifyError } from "../../unify";
+import { typePPrint } from "../../type/pretty-printer";
+import { TypedAst, UnboundVariableError, typecheck } from "../../typecheck";
+import { prelude } from "../../prelude";
 
 const documents = new TextDocuments(TextDocument);
 const docs = new Map<string, [TextDocument, SpannedAndTyped]>();

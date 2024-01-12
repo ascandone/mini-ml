@@ -1,8 +1,0 @@
-{
-  "compilerOptions": {
-    "outDir": "./dist",
-    "declaration": true,
-    "allowJs": true
-  },
-  "extends": ["../tsconfig.json"]
-}
