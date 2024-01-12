@@ -6,9 +6,13 @@ A minimal implementation of an Hindley–Milner type checker, with LSP integrati
 
 _Example:_
 
-```
-let id x = x in
-1 + id 42
+```ml
+let is_even n =
+  if n == 0
+  then true
+  else not (is_even (n - 1))
+in
+is_even 42
 ```
 
-> Inferred type: `Num`
+> Inferred type: `Bool`
