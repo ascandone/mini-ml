@@ -8,9 +8,12 @@ _Example:_
 
 ```ml
 let is_even n =
-  if n == 0
-  then true
-  else not (is_even (n - 1))
+  if n == 0 then
+    true
+  else if n == 1 then
+    false
+  else
+    not (is_even (n - 1))
 in
 is_even 42
 ```
