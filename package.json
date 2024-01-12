@@ -6,10 +6,11 @@
     "mini-ml": "./dist/cli/main.js"
   },
   "scripts": {
-    "test": "vitest",
     "generate:parser": "ohm generateBundles --withTypes src/parser/grammar.ohm",
+    "test:watch": "vitest",
+    "test:run": "vitest --run",
     "ts:build": "tsc",
-    "ts:watch": "tsc --watch",
+    "ts:watch": "tsc --noEmit --watch",
     "format:check": "prettier --check --cache ./**/*.ts",
     "format:write": "prettier --write --cache ./**/*.ts"
   },
