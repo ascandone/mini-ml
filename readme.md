@@ -1,4 +1,4 @@
-[![CI](https://github.com/ascandone/mini-ml/actions/workflows/ci.yml/badge.svg)](https://github.com/ascandone/mini-ml/actions/workflows/ci.yml)
+[![CI](https://github.com/ascandone/mini-ml/actions/workflows/ci.yml/badge.svg)](https://github.com/ascandone/mini-ml/actions/workflows/ci.yml) [![codecov](https://codecov.io/gh/ascandone/mini-ml/graph/badge.svg?token=MSbSsCYLhn)](https://codecov.io/gh/ascandone/mini-ml)
 
 ### Mini-ml
 
