@@ -2,7 +2,7 @@
 
 ### Mini-ml
 
-A minimal implementation of an Hindley–Milner type checker, with LSP integration
+A minimal implementation of an Hindley–Milner type checker, with LSP integration (see the [vscode language client](https://github.com/ascandone/mini-ml-vscode))
 
 _Example:_
 
