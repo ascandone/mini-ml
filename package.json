@@ -10,7 +10,7 @@
     "test:watch": "vitest",
     "test:run": "vitest --run --coverage",
     "ts:build": "tsc",
-    "ts:watch": "tsc --noEmit --watch",
+    "ts:watch": "tsc --watch",
     "format:check": "prettier --check --cache ./**/*.ts",
     "format:write": "prettier --write --cache ./**/*.ts"
   },

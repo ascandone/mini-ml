@@ -8,9 +8,9 @@ import {
 
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { Span, SpannedAst, parse } from "../../parser";
-import { Type, UnifyErrorType } from "../../unify";
-import { typePPrint } from "../../type/pretty-printer";
-import { TypedAst, typecheck, TypeError } from "../../typecheck";
+import { Type } from "../../unify";
+import { typeErrorPPrint, typePPrint } from "../../typecheck/pretty-printer";
+import { TypedAst, typecheck } from "../../typecheck";
 import { prelude } from "../../prelude";
 
 const documents = new TextDocuments(TextDocument);
@@ -59,7 +59,7 @@ function findTypeByOffset<T>(
   }
 }
 
-export function lsp() {
+export function lspCmd() {
   const connection =
     // @ts-ignore
     createConnection();
@@ -107,7 +107,7 @@ export function lsp() {
         const [start, end] = e.node.span;
 
         return {
-          message: getTypeErrorMessage(e),
+          message: typeErrorPPrint(e),
           source: "Typecheck",
           severity: DiagnosticSeverity.Error,
           range: {
@@ -150,19 +150,3 @@ ${tpp}
 }
 
 type SpannedAndTyped<T = {}> = SpannedAst<T> & TypedAst<T>;
-
-function getTypeErrorMessage(e: TypeError<unknown>) {
-  switch (e.type) {
-    case "unbound-variable":
-      return `Unbound variable: ${e.type}`;
-
-    case "occurs-check":
-      return "Cannot construct the infinite type";
-    case "type-mismatch":
-      return `Type mismatch
-
-Expected:  ${typePPrint(e.left)}
-     Got:  ${typePPrint(e.right)}
-`;
-  }
-}

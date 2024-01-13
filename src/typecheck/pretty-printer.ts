@@ -1,4 +1,5 @@
 import { TVar, Type, generalize } from "../unify";
+import { TypeError } from "../typecheck";
 
 function pprintHelper(t: Type): string {
   if (t instanceof TVar) {
@@ -34,4 +35,20 @@ function pprintHelper(t: Type): string {
 
 export function typePPrint(t: Type): string {
   return pprintHelper(generalize(t));
+}
+
+export function typeErrorPPrint(e: TypeError<unknown>) {
+  switch (e.type) {
+    case "unbound-variable":
+      return `Unbound variable: "${e.ident}"`;
+
+    case "occurs-check":
+      return "Cannot construct the infinite type";
+    case "type-mismatch":
+      return `Type mismatch
+
+Expected:  ${typePPrint(e.left)}
+     Got:  ${typePPrint(e.right)}
+`;
+  }
 }

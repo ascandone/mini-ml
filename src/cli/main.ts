@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
-import { run } from "./commands/run";
-import { lsp } from "./commands/lsp";
+import { typecheckCmd } from "./commands/typecheck";
+import { lspCmd } from "./commands/lsp";
 const packageJson = require("../../package.json");
 
 const program = new Command();
@@ -10,17 +10,17 @@ const program = new Command();
 program.version(packageJson.version);
 
 program
-  .command("infer <path>")
+  .command("typecheck <path>")
   .description("Infer the type of given file")
   .action((path: string) => {
-    run(path);
+    typecheckCmd(path);
   });
 
 program
   .command("lsp")
   .description("Run the language server")
   .action(() => {
-    lsp();
+    lspCmd();
   });
 
 program.parse();

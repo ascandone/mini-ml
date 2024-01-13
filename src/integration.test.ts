@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 import { unsafeParse } from "./parser";
 import { typecheck } from "./typecheck";
-import { typePPrint } from "./type/pretty-printer";
+import { typePPrint } from "./typecheck/pretty-printer";
 import { prelude } from "./prelude";
 
 test("+ operator", () => {
