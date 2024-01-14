@@ -1,5 +1,3 @@
-export type Ref<T> = { ref: T };
-
 export type Type = TVar | [string, ...Type[]];
 
 export type TVarResolution =
