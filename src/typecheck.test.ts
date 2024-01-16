@@ -1,7 +1,6 @@
 import { expect, test } from "vitest";
 import { UntypedAst, typecheck, TypeError, TypedAst } from "./typecheck";
-import { TVar, TVarResolution, UnifyError, generalize } from "./unify";
-import { SpannedAst } from "./parser";
+import { TVar, TVarResolution, generalize } from "./unify";
 import { Ast } from "./ast";
 
 test("infer constant type", () => {
