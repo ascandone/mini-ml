@@ -9,7 +9,7 @@ export class Unifier {
   private nextId = 0;
   private substitutions = new Map<number, Type>();
 
-  freshVar(): Type {
+  freshVar(): Type & { tag: "Var" } {
     return {
       tag: "Var",
       id: this.nextId++,
@@ -86,5 +86,74 @@ export class Unifier {
     } else {
       throw new Error("[unreachable]");
     }
+  }
+}
+
+export class PolyType {
+  private t: Type;
+  private ctxVars = new Set<number>();
+
+  constructor(
+    t: Type,
+    private unifier: Unifier,
+    context: Type[] = [],
+  ) {
+    // Note: it would be incorrect to resolve the type
+    // while instantiating
+    // (and also happens to be possibly less performant)
+    this.t = unifier.resolve(t);
+
+    for (const t of context) {
+      this.findFreeVars(this.unifier.resolve(t));
+    }
+  }
+
+  private findFreeVars(t: Type) {
+    switch (t.tag) {
+      case "Named":
+        for (const arg of t.args) {
+          this.findFreeVars(arg);
+        }
+        break;
+
+      case "Var":
+        this.ctxVars.add(t.id);
+        break;
+    }
+  }
+
+  instantiate(): Type {
+    const instantiatedVars = new Map<Number, number>();
+
+    const instantiateType = (t: Type): Type => {
+      switch (t.tag) {
+        case "Named":
+          return {
+            ...t,
+            args: t.args.map((arg) => instantiateType(arg)),
+          };
+
+        case "Var": {
+          // Skip instantiation wheter the var is not free in ctx
+          if (this.ctxVars.has(t.id)) {
+            return t;
+          }
+
+          const previousInstantiation = instantiatedVars.get(t.id);
+          if (previousInstantiation !== undefined) {
+            return {
+              tag: "Var",
+              id: previousInstantiation,
+            };
+          }
+
+          const freshVar = this.unifier.freshVar();
+          instantiatedVars.set(t.id, freshVar.id);
+          return freshVar;
+        }
+      }
+    };
+
+    return instantiateType(this.t);
   }
 }

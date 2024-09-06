@@ -1,5 +1,11 @@
-import { test, expect } from "vitest";
-import { OccursCheckError, Type, TypeMismatchError, Unifier } from "./type";
+import { test, expect, describe } from "vitest";
+import {
+  OccursCheckError,
+  PolyType,
+  Type,
+  TypeMismatchError,
+  Unifier,
+} from "./type";
 
 const int: Type = { tag: "Named", name: "Int", args: [] };
 const bool: Type = { tag: "Named", name: "Bool", args: [] };
@@ -291,138 +297,134 @@ test("occurs check of unified values", () => {
   expect(u.resolve(t0)).toEqual(list(int));
 });
 
-// describe("generalization", () => {
-//   test("generalize primitive value", () => {
-// const u = new Unifier();
-//     const poly = generalize(int);
-//     expect(poly).toEqual(int);
-//   });
+describe("generalization", () => {
+  test("generalize primitive value", () => {
+    const u = new Unifier();
+    const poly = new PolyType(int, u);
+    expect(poly.instantiate()).toEqual(int);
+  });
 
-//   test("generalize var bound to primitive", () => {
-// const u = new Unifier();
-//     const t0 = u.fresh();
-//     u.unify(t0, int);
-//     const poly = generalize(t0);
-//     expect(poly).toEqual(int);
-//   });
+  test("generalize var bound to primitive", () => {
+    const u = new Unifier();
+    const t0 = u.freshVar();
+    u.unify(t0, int);
+    const poly = new PolyType(t0, u);
+    expect(poly.instantiate()).toEqual(int);
+  });
 
-//   test("generalize single unbound var", () => {
-// const u = new Unifier();
-//     const t0 = u.fresh();
-//     const poly = generalize(t0);
+  test("generalize single unbound var", () => {
+    const u = new Unifier();
+    const t0 = u.freshVar();
+    const poly = new PolyType(t0, u);
 
-//     expect((poly as TVar).resolve().type).toEqual("quantified");
-//   });
+    expect(poly.instantiate()).not.toEqual<Type>(t0);
+  });
 
-//   test("generalize many vars", () => {
-// const u = new Unifier();
-//     const t0 = u.fresh();
-//     const t1 = u.fresh();
+  test("generalization and instantiation prevents the original var to be mutated", () => {
+    const u = new Unifier();
+    const t0 = u.freshVar();
 
-//     const poly = generalize(["Tuple", t0, t1]) as any[];
+    const mono = new PolyType(t0, u).instantiate();
 
-//     expect(poly.length).toEqual(3);
-//     const [t, $g1, $g2] = poly;
+    u.unify(mono, int);
+    expect(u.resolve(t0)).toEqual(t0);
+  });
 
-//     expect(t, "Tuple");
+  test("generalize many vars", () => {
+    const u = new Unifier();
+    const t0 = u.freshVar();
+    const t1 = u.freshVar();
 
-//     expect($g1.value.type).toEqual("quantified");
-//     expect($g2.value.type).toEqual("quantified");
+    const poly = new PolyType(tuple(t0, t1), u);
 
-//     expect($g1.value.id).toEqual(0);
-//     expect($g2.value.id).toEqual(1);
-//   });
+    const mono = poly.instantiate();
 
-//   test("generalize many vars when linked", () => {
-// const u = new Unifier();
-//     const t0 = u.fresh();
+    expect(mono).toEqual(
+      tuple(
+        expect.objectContaining({
+          tag: "Var",
+          id: expect.anything(),
+        }),
+        expect.objectContaining({
+          tag: "Var",
+          id: expect.anything(),
+        }),
+      ),
+    );
 
-//     const poly = generalize(["Tuple", t0, t0]) as any[];
+    expect(mono).not.toEqual(tuple(t0, t1));
+  });
 
-//     expect(poly.length).toEqual(3);
-//     const [t, $g1, $g2] = poly;
+  test("generalize many vars when linked", () => {
+    const u = new Unifier();
+    const t0 = u.freshVar();
 
-//     expect(t, "Tuple");
+    const poly = new PolyType(tuple(t0, t0), u);
 
-//     expect($g1.value.type).toEqual("quantified");
-//     expect($g2.value.type).toEqual("quantified");
+    const mono = poly.instantiate();
+    expect(mono).toEqual<Type>(
+      tuple(
+        {
+          tag: "Var",
+          id: 1,
+        },
+        {
+          tag: "Var",
+          id: 1,
+        },
+      ),
+    );
+  });
 
-//     expect($g1.value.id).toEqual(0);
-//     expect($g2.value.id).toEqual(0);
-//   });
+  test("do not generalize vars that appear in the context", () => {
+    const u = new Unifier();
+    const t0 = u.freshVar();
+    const t1 = u.freshVar();
 
-//   test("generalize var bound to a nested type to generalize ", () => {
-// const u = new Unifier();
-//     const t0 = u.fresh();
-//     const t1 = u.fresh();
-//     u.unify(t0, ["->", t1, t1]);
+    const mono = new PolyType(tuple(t0, t1), u, [
+      // Note t1 is not free in context
+      list(t1),
+    ]).instantiate();
 
-//     const poly = generalize(t0) as any[];
+    expect(mono).toEqual<Type>(
+      tuple(
+        expect.not.objectContaining<Type>(t0),
+        t1, // t1 was not free, therefore it must not be generalized
+      ),
+    );
+  });
 
-//     expect(poly.length).toEqual(3);
-//     const [t, $g1, $g2] = poly;
+  test("do not generalize vars that appear in the context when resolved", () => {
+    const u = new Unifier();
+    const t0 = u.freshVar();
+    const t1 = u.freshVar();
 
-//     expect(t, "->");
+    u.unify(t0, t1);
+    const mono = new PolyType(t0, u, [
+      // t1 appears in context instead of t0
+      // but t1 is linked to t0
+      list(t1),
+    ]).instantiate();
 
-//     expect($g1.resolve()).toEqual({ type: "quantified", id: 0 });
-//     expect($g2.resolve()).toEqual({ type: "quantified", id: 0 });
-//   });
+    expect(mono).toEqual<Type>(t0);
+  });
 
-//   test("do not generalize vars that appear in the context", () => {
-// const u = new Unifier();
-//     const t0 = u.fresh();
-//     const t1 = u.fresh();
+  test("do not generalize vars that appear in the context when resolved (2)", () => {
+    const u = new Unifier();
+    const t0 = u.freshVar();
+    const t1 = u.freshVar();
 
-//     const poly = generalize(["->", t0, t1], {
-//       // Note t1 is not free in context
-//       x: list(t1),
-//     }) as any[];
+    u.unify(t1, t0);
 
-//     expect(poly.length).toEqual(3);
-//     const [, $ga, $gb] = poly;
+    // make sure t0 resolves as t1
+    expect(u.resolve(t0)).toEqual<Type>(t1);
 
-//     expect($ga.resolve()).toEqual({ type: "quantified", id: 0 });
-//     expect($gb).toBe(t1);
-//   });
+    const mono = new PolyType(t0, u, [
+      // t0 does appear in the context
+      // but t0 is linked to t1
+      list(t0),
+    ]).instantiate();
 
-//   test("instantiate concrete type", () => {
-// const u = new Unifier();
-//     const m = instantiate(int);
-//     expect(m).toEqual(int);
-//   });
-
-//   test("instantiate single var", () => {
-// const u = new Unifier();
-//     const t0 = u.fresh();
-//     const $g = generalize(t0);
-//     const $m = instantiate($g) as TVar;
-//     expect($m.resolve().type).toEqual("unbound");
-//     expect(($m.resolve() as any).id).not.toEqual((u.resolve(t0) as any).id);
-//   });
-
-//   test("instantiate two different vars", () => {
-// const u = new Unifier();
-//     const t0 = u.fresh();
-//     const t1 = u.fresh();
-
-//     const $g = generalize(["Pair", t0, t1]);
-
-//     const [_, t0i, t1i] = instantiate($g) as any[];
-
-//     expect(t0i.resolve().type).toEqual("unbound");
-//     expect(t1i.resolve().type).toEqual("unbound");
-//     expect(t0i.resolve().id).not.toEqual(t1i.resolve().id);
-//   });
-
-//   test("instantiate two same vars", () => {
-//     const t0 = u.fresh();
-//     const $g = generalize(["Pair", t0, t0]);
-
-//     const [, t0i, t1i] = instantiate($g) as any[];
-
-//     expect(t0i.value.type).toEqual("unbound");
-//     expect(t1i.value.type).toEqual("unbound");
-
-//     expect(t0i.value.id).toEqual(t1i.value.id);
-//   });
-// });
+    expect(mono).toEqual<Type>(t1);
+  });
+});
