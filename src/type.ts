@@ -9,7 +9,7 @@ export class Unifier {
   private nextId = 0;
   private substitutions = new Map<number, Type>();
 
-  fresh(): Type {
+  freshVar(): Type {
     return {
       tag: "Var",
       id: this.nextId++,
@@ -17,6 +17,19 @@ export class Unifier {
   }
 
   resolve(t: Type): Type {
+    t = this.resolveOnce(t);
+
+    if (t.tag === "Var") {
+      return t;
+    }
+
+    return {
+      ...t,
+      args: t.args.map((arg) => this.resolve(arg)),
+    };
+  }
+
+  private resolveOnce(t: Type): Type {
     switch (t.tag) {
       case "Named":
         // TODO recur?
@@ -27,7 +40,7 @@ export class Unifier {
         if (substitution === undefined) {
           return t;
         }
-        return this.resolve(substitution);
+        return this.resolveOnce(substitution);
       }
     }
   }
@@ -35,7 +48,7 @@ export class Unifier {
   /** Pre: t1 is the resolved value */
   private occursCheck(t1: Type & { tag: "Var" }, t2: Type & { tag: "Named" }) {
     for (let arg of t2.args) {
-      arg = this.resolve(arg);
+      arg = this.resolveOnce(arg);
       switch (arg.tag) {
         case "Var":
           if (t1.id === arg.id) {
@@ -50,8 +63,8 @@ export class Unifier {
   }
 
   unify(t1: Type, t2: Type) {
-    t1 = this.resolve(t1);
-    t2 = this.resolve(t2);
+    t1 = this.resolveOnce(t1);
+    t2 = this.resolveOnce(t2);
 
     if (t1.tag === "Named" && t2.tag === "Named") {
       if (t1.name !== t2.name || t1.args.length !== t2.args.length) {
@@ -71,7 +84,7 @@ export class Unifier {
       }
       this.substitutions.set(t2.id, t1);
     } else {
-      throw new Error("TODO unhandled");
+      throw new Error("[unreachable]");
     }
   }
 }

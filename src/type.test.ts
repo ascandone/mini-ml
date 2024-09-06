@@ -35,7 +35,7 @@ test("unify two concrete vars that do not match", () => {
 
 test("TypeVar is unbound initially", () => {
   const u = new Unifier();
-  const t0 = u.fresh();
+  const t0 = u.freshVar();
 
   expect(u.resolve(t0)).toEqual<Type>({
     tag: "Var",
@@ -46,7 +46,7 @@ test("TypeVar is unbound initially", () => {
 test("unify a concrete type and a var", () => {
   const u = new Unifier();
 
-  const t0 = u.fresh();
+  const t0 = u.freshVar();
   u.unify(t0, int);
 
   expect(u.resolve(t0)).toEqual<Type>(int);
@@ -55,7 +55,7 @@ test("unify a concrete type and a var", () => {
 test("unify a var and a concrete type", () => {
   const u = new Unifier();
 
-  const t0 = u.fresh();
+  const t0 = u.freshVar();
   u.unify(int, t0);
 
   expect(u.resolve(t0)).toEqual<Type>(int);
@@ -64,21 +64,21 @@ test("unify a var and a concrete type", () => {
 test("unify to another TVar", () => {
   const u = new Unifier();
 
-  const t0 = u.fresh();
-  const t1 = u.fresh();
+  const t0 = u.freshVar();
+  const t1 = u.freshVar();
   u.unify(t0, t1);
   expect(u.resolve(t0)).toEqual<Type>(u.resolve(t1));
 });
 
 test("unify to another bound TVar should fail", () => {
   const u = new Unifier();
-  const t0 = u.fresh();
+  const t0 = u.freshVar();
   u.unify(t0, int);
 
-  const t1 = u.fresh();
+  const t1 = u.freshVar();
   u.unify(t1, bool);
 
-  const t2 = u.fresh();
+  const t2 = u.freshVar();
   u.unify(t1, t2);
 
   expect(() => u.unify(t0, t2)).toThrow(TypeMismatchError);
@@ -86,9 +86,9 @@ test("unify to another bound TVar should fail", () => {
 
 test("unify 3 lvars", () => {
   const u = new Unifier();
-  const t0 = u.fresh();
-  const t1 = u.fresh();
-  const t2 = u.fresh();
+  const t0 = u.freshVar();
+  const t1 = u.freshVar();
+  const t2 = u.freshVar();
 
   u.unify(t0, t2);
   u.unify(t2, t1);
@@ -101,8 +101,8 @@ test("unify 3 lvars", () => {
 
 test("TVars should be reactive (left)", () => {
   const u = new Unifier();
-  const t0 = u.fresh();
-  const t1 = u.fresh();
+  const t0 = u.freshVar();
+  const t1 = u.freshVar();
 
   u.unify(t0, t1);
   u.unify(t1, int);
@@ -113,8 +113,8 @@ test("TVars should be reactive (left)", () => {
 
 test("TVars should be reactive (right)", () => {
   const u = new Unifier();
-  const t0 = u.fresh();
-  const t1 = u.fresh();
+  const t0 = u.freshVar();
+  const t1 = u.freshVar();
 
   u.unify(t1, t0);
   u.unify(t1, int);
@@ -125,9 +125,9 @@ test("TVars should be reactive (right)", () => {
 
 test("trying to link a linked var (1)", () => {
   const u = new Unifier();
-  const t0 = u.fresh();
-  const t1 = u.fresh();
-  const t2 = u.fresh();
+  const t0 = u.freshVar();
+  const t1 = u.freshVar();
+  const t2 = u.freshVar();
 
   u.unify(t2, t0); // a~>c
   u.unify(t1, t0); // a~>b
@@ -140,9 +140,9 @@ test("trying to link a linked var (1)", () => {
 
 test("trying to link a linked var (2)", () => {
   const u = new Unifier();
-  const t0 = u.fresh();
-  const t1 = u.fresh();
-  const t2 = u.fresh();
+  const t0 = u.freshVar();
+  const t1 = u.freshVar();
+  const t2 = u.freshVar();
 
   u.unify(t0, t2);
   u.unify(t0, t1);
@@ -155,10 +155,10 @@ test("trying to link a linked var (2)", () => {
 
 test("trying to unify two linked vars", () => {
   const u = new Unifier();
-  const t0 = u.fresh();
-  const t1 = u.fresh();
-  const t2 = u.fresh();
-  const t3 = u.fresh();
+  const t0 = u.freshVar();
+  const t1 = u.freshVar();
+  const t2 = u.freshVar();
+  const t3 = u.freshVar();
 
   u.unify(t1, t0); // a~>b
   u.unify(t3, t2); // c~>d
@@ -174,8 +174,8 @@ test("trying to unify two linked vars", () => {
 
 test("unify to another TVar", () => {
   const u = new Unifier();
-  const t0 = u.fresh();
-  const t1 = u.fresh();
+  const t0 = u.freshVar();
+  const t1 = u.freshVar();
   u.unify(t0, t1);
   expect(u.resolve(t0)).toEqual<Type>(t0);
   expect(u.resolve(t0)).toEqual(u.resolve(t1));
@@ -183,14 +183,14 @@ test("unify to another TVar", () => {
 
 test("unify nested TVar", () => {
   const u = new Unifier();
-  const t0 = u.fresh();
+  const t0 = u.freshVar();
   u.unify(list(t0), list(bool));
   expect(u.resolve(t0)).toEqual<Type>(bool);
 });
 
 test("unify twice to a const", () => {
   const u = new Unifier();
-  const t0 = u.fresh();
+  const t0 = u.freshVar();
 
   u.unify(t0, int);
   u.unify(t0, int);
@@ -200,7 +200,7 @@ test("unify twice to a const", () => {
 
 test("unify to a const, then to a different one should fail", () => {
   const u = new Unifier();
-  const t0 = u.fresh();
+  const t0 = u.freshVar();
 
   u.unify(t0, int);
   expect(() => u.unify(t0, bool)).toThrow(TypeMismatchError);
@@ -208,8 +208,8 @@ test("unify to a const, then to a different one should fail", () => {
 
 test("transitive unifications", () => {
   const u = new Unifier();
-  const t0 = u.fresh();
-  const t1 = u.fresh();
+  const t0 = u.freshVar();
+  const t1 = u.freshVar();
   u.unify(t0, t1);
   u.unify(t0, int);
 
@@ -219,9 +219,9 @@ test("transitive unifications", () => {
 
 test("transitive unifications (3)", () => {
   const u = new Unifier();
-  const t0 = u.fresh();
-  const t1 = u.fresh();
-  const t2 = u.fresh();
+  const t0 = u.freshVar();
+  const t1 = u.freshVar();
+  const t2 = u.freshVar();
 
   u.unify(t0, t1);
   u.unify(t1, t2);
@@ -239,8 +239,8 @@ test("transitive unifications (3)", () => {
 
 test("recursively linked TVars", () => {
   const u = new Unifier();
-  const t0 = u.fresh();
-  const t1 = u.fresh();
+  const t0 = u.freshVar();
+  const t1 = u.freshVar();
 
   u.unify(t0, t1);
   u.unify(t1, t0);
@@ -250,9 +250,9 @@ test("recursively linked TVars", () => {
 
 test("recursively linked TVars (3 steps)", () => {
   const u = new Unifier();
-  const t0 = u.fresh();
-  const t1 = u.fresh();
-  const t2 = u.fresh();
+  const t0 = u.freshVar();
+  const t1 = u.freshVar();
+  const t2 = u.freshVar();
 
   u.unify(t0, t1);
   u.unify(t1, t2);
@@ -264,18 +264,31 @@ test("recursively linked TVars (3 steps)", () => {
 
 test("occurs check", () => {
   const u = new Unifier();
-  const t0 = u.fresh();
+  const t0 = u.freshVar();
   expect(() => u.unify(t0, list(t0))).toThrow(OccursCheckError);
 });
 
 test("occurs check of unified values", () => {
   const u = new Unifier();
-  const t0 = u.fresh();
-  const t1 = u.fresh();
+  const t0 = u.freshVar();
+  const t1 = u.freshVar();
 
   u.unify(t0, t1);
 
   expect(() => u.unify(t0, list(t1))).toThrow(OccursCheckError);
+});
+
+test("occurs check of unified values", () => {
+  const u = new Unifier();
+  const t0 = u.freshVar();
+  const t1 = u.freshVar();
+
+  u.unify(t0, list(t1));
+
+  expect(u.resolve(t0)).toEqual(list(t1));
+
+  u.unify(t1, int);
+  expect(u.resolve(t0)).toEqual(list(int));
 });
 
 // describe("generalization", () => {
