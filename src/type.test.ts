@@ -6,19 +6,7 @@ import {
   TypeMismatchError,
   Unifier,
 } from "./type";
-
-const int: Type = { tag: "Named", name: "Int", args: [] };
-const bool: Type = { tag: "Named", name: "Bool", args: [] };
-const list = (x: Type): Type => ({
-  tag: "Named",
-  name: "List",
-  args: [x],
-});
-const tuple = (...ts: Type[]): Type => ({
-  tag: "Named",
-  name: "Tuple",
-  args: ts,
-});
+import { int, bool, list, tuple } from "./__test__/types";
 
 test("unifing two concrete vars when they match", () => {
   const u = new Unifier();
