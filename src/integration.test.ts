@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { unsafeParse } from "./parser";
-import { typecheck } from "./typecheck";
+import { Analysis, typecheck } from "./typecheck";
 import { typePPrint } from "./typecheck/pretty-printer";
 import { prelude } from "./prelude";
 
@@ -46,7 +46,7 @@ test("do not generalize vars bound in context", () => {
 
 function assertType(src: string, type: string) {
   const parsedAst = unsafeParse(src);
-  const [typedAst] = typecheck(parsedAst, prelude);
-  const t = typePPrint(typedAst.$);
+  const a = new Analysis(parsedAst, prelude);
+  const t = typePPrint(a.typedAst.$);
   expect(t).toBe(type);
 }

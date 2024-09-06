@@ -28,8 +28,14 @@ export type TypeError<Node> =
       right: Type;
     };
 
-class Typechecker<T> {
+export class Analysis<T> {
   errors: TypeError<TypedAst<T>>[] = [];
+
+  public typedAst: TypedAst<T>;
+  constructor(untypedAst: UntypedAst<T>, context: Context = {}) {
+    this.typedAst = annotate(untypedAst);
+    this.typecheckAnnotated(this.typedAst, context);
+  }
 
   private unifyNode(ast: TypedAst<T>, t1: Type, t2: Type) {
     try {
@@ -47,7 +53,7 @@ class Typechecker<T> {
     }
   }
 
-  typecheckAnnotated(ast: TypedAst<T>, context: Context) {
+  private typecheckAnnotated(ast: TypedAst<T>, context: Context) {
     switch (ast.type) {
       case "constant": {
         const t = inferConstant(ast.value);
@@ -109,9 +115,7 @@ export function typecheck<T = {}>(
 ): [TypedAst<T>, TypeError<TypedAst<T>>[]] {
   TVar.resetId();
   const typedAst = annotate(ast);
-
-  const typechecker = new Typechecker<T>();
-  typechecker.typecheckAnnotated(typedAst, context);
+  const typechecker = new Analysis<T>(typedAst, context);
   return [typedAst, typechecker.errors];
 }
 

@@ -1,20 +1,26 @@
 import { expect, test } from "vitest";
-import { UntypedAst, typecheck, TypeError, TypedAst } from "./typecheck";
+import {
+  UntypedAst,
+  typecheck,
+  TypeError,
+  TypedAst,
+  Analysis,
+} from "./typecheck";
 import { TVar, TVarResolution, generalize } from "./unify";
 import { Ast } from "./ast";
 
 test("infer constant type", () => {
-  const [ast] = typecheck({ type: "constant", value: 42 });
-  expect(ast.$.resolve()).toEqual<TVarResolution>({
+  const a = new Analysis({ type: "constant", value: 42 });
+  expect(a.typedAst.$.resolve()).toEqual<TVarResolution>({
     type: "bound",
     value: ["Num"],
   });
 });
 
 test("unbound vars should fail typecheck", () => {
-  const [, errors] = typecheck({ type: "ident", ident: "not_found" });
-  expect(errors.length).toBe(1);
-  expect(errors[0]).toEqual<TypeError<Ast>>({
+  const a = new Analysis({ type: "ident", ident: "not_found" });
+  expect(a.errors.length).toBe(1);
+  expect(a.errors[0]).toEqual<TypeError<Ast>>({
     type: "unbound-variable",
     ident: "not_found",
     node: expect.objectContaining({
@@ -25,7 +31,7 @@ test("unbound vars should fail typecheck", () => {
 });
 
 test("infer a variable contained in the context", () => {
-  const [ast] = typecheck(
+  const a = new Analysis(
     {
       type: "ident",
       ident: "x",
@@ -35,14 +41,14 @@ test("infer a variable contained in the context", () => {
     },
   );
 
-  expect(ast.$.resolve()).toEqual({
+  expect(a.typedAst.$.resolve()).toEqual({
     type: "bound",
     value: ["Num"],
   });
 });
 
 test("infer abstraction returning a constant", () => {
-  const [ast] = typecheck({
+  const a = new Analysis({
     type: "abstraction",
     param: { name: "x" },
     body: {
@@ -51,16 +57,19 @@ test("infer abstraction returning a constant", () => {
     },
   } as const) as any;
 
-  expect(ast.$.resolve().type).toEqual("bound");
-  const [t, param, body] = ast.$.resolve().value;
+  expect(a.typedAst.$.resolve().type).toEqual("bound");
+  const [t, param, body] = a.typedAst.$.resolve().value;
   expect(t).toEqual("->");
   expect(param.value.type).toEqual("unbound");
   expect(body.value).toEqual({ type: "bound", value: ["Num"] });
-  expect(ast.body.$.resolve()).toEqual({ type: "bound", value: ["Num"] });
+  expect(a.typedAst.body.$.resolve()).toEqual({
+    type: "bound",
+    value: ["Num"],
+  });
 });
 
 test("infer application", () => {
-  const [ast] = typecheck(
+  const a = new Analysis(
     {
       type: "application",
       caller: {
@@ -77,17 +86,17 @@ test("infer application", () => {
     },
   ) as any;
 
-  expect(ast.$.resolve().value).toEqual(["Num"]);
+  expect(a.typedAst.$.resolve().value).toEqual(["Num"]);
 
-  expect(ast.caller.$.resolve().type).toEqual("bound");
-  const [t, $param, $body] = ast.caller.$.resolve().value;
+  expect(a.typedAst.caller.$.resolve().type).toEqual("bound");
+  const [t, $param, $body] = a.typedAst.caller.$.resolve().value;
   expect(t).toEqual("->");
   expect($param.resolve()).toEqual({ type: "bound", value: ["Num"] });
   expect($body.resolve()).toEqual({ type: "bound", value: ["Num"] });
 });
 
 test("detect type mismatch errors", () => {
-  const [ast, errors] = typecheck<{}>(
+  const a = new Analysis<{}>(
     {
       type: "application",
       caller: {
@@ -104,8 +113,8 @@ test("detect type mismatch errors", () => {
     },
   );
 
-  expect(errors.length).toBe(1);
-  expect(errors[0]).toEqual<TypeError<TypedAst>>({
+  expect(a.errors.length).toBe(1);
+  expect(a.errors[0]).toEqual<TypeError<TypedAst>>({
     type: "type-mismatch",
     left: ["Bool"],
     right: ["Num"],
@@ -116,11 +125,11 @@ test("detect type mismatch errors", () => {
   });
 
   // Inferred types are kept
-  expect((ast as any).$.resolve().type).toEqual("bound");
+  expect((a.typedAst as any).$.resolve().type).toEqual("bound");
 });
 
 test("detect occurs check error", () => {
-  const [ast, errors] = typecheck<{ id: number }>({
+  const a = new Analysis<{ id: number }>({
     type: "abstraction",
     param: { name: "x", id: -1 },
     body: {
@@ -140,10 +149,10 @@ test("detect occurs check error", () => {
     id: -1,
   });
 
-  expect(errors.length).toBe(1);
+  expect(a.errors.length).toBe(1);
 
   // TODO maybe the error should be moved to the param?
-  expect(errors[0]).toEqual<TypeError<TypedAst>>({
+  expect(a.errors[0]).toEqual<TypeError<TypedAst>>({
     type: "occurs-check",
     left: expect.anything(),
     right: expect.anything(),
@@ -158,7 +167,7 @@ test("detect occurs check error", () => {
 test("infer identity function", () => {
   // \x -> x
   //=> 'a -> 'a
-  const [ast] = typecheck({
+  const a = new Analysis({
     type: "abstraction",
     param: { name: "x" },
 
@@ -168,19 +177,19 @@ test("infer identity function", () => {
     },
   } as UntypedAst);
 
-  expect(ast.$.resolve().type).toEqual("bound");
-  const [t, $param, $body] = (ast.$.resolve() as any).value;
+  expect(a.typedAst.$.resolve().type).toEqual("bound");
+  const [t, $param, $body] = (a.typedAst.$.resolve() as any).value;
 
   expect(t).toEqual("->");
   expect($param.resolve()).toEqual($body.resolve());
-  expect($param.resolve()).toEqual((ast as any).param.$.resolve());
-  expect($body.resolve()).toEqual((ast as any).body.$.resolve());
+  expect($param.resolve()).toEqual((a.typedAst as any).param.$.resolve());
+  expect($body.resolve()).toEqual((a.typedAst as any).body.$.resolve());
 });
 
 test("infer abstraction parameter", () => {
   // \f-> f 42
   //    => (Num -> a) -> a
-  const [ast] = typecheck({
+  const a = new Analysis({
     type: "abstraction",
     param: { name: "f" },
     body: {
@@ -196,23 +205,23 @@ test("infer abstraction parameter", () => {
     },
   } as UntypedAst) as any;
 
-  expect(ast.$.resolve().type, "bound");
-  const [t, $param, $body] = ast.$.resolve().value;
+  expect(a.typedAst.$.resolve().type, "bound");
+  const [t, $param, $body] = a.typedAst.$.resolve().value;
 
   expect(t, "->");
-  expect($param.value).toEqual(ast.param.$.resolve());
-  expect($param.value).toEqual(ast.body.caller.$.resolve());
-  expect($body.value).toEqual(ast.body.$.resolve());
+  expect($param.value).toEqual(a.typedAst.param.$.resolve());
+  expect($param.value).toEqual(a.typedAst.body.caller.$.resolve());
+  expect($body.value).toEqual(a.typedAst.body.$.resolve());
 
   expect($param.value.type).toEqual("bound");
   const [t1, $param1, $body1] = $param.value.value;
   expect(t1).toEqual("->");
   expect($param1.value).toEqual({ type: "bound", value: ["Num"] });
-  expect($body1.value).toEqual(ast.body.$.resolve());
+  expect($body1.value).toEqual(a.typedAst.body.$.resolve());
 });
 
 test("infer if expression's condition", () => {
-  const [f] = typecheck({
+  const a = new Analysis({
     type: "abstraction",
     param: { name: "x" },
     body: {
@@ -223,14 +232,14 @@ test("infer if expression's condition", () => {
     },
   } as const);
 
-  expect(f.body!.condition.$.resolve()).toEqual({
+  expect(a.typedAst.body!.condition.$.resolve()).toEqual({
     type: "bound",
     value: ["Bool"],
   });
 });
 
 test("infer if expression's arg", () => {
-  const [f] = typecheck({
+  const a = new Analysis({
     type: "abstraction",
     param: { name: "x" },
     body: {
@@ -241,22 +250,25 @@ test("infer if expression's arg", () => {
     },
   } as const);
 
-  expect(f.body!.then.$.resolve()).toEqual({ type: "bound", value: ["Num"] });
+  expect(a.typedAst.body!.then.$.resolve()).toEqual({
+    type: "bound",
+    value: ["Num"],
+  });
 });
 
 test("infer if expression's value", () => {
-  const [ast] = typecheck({
+  const a = new Analysis({
     type: "if",
     condition: { type: "constant", value: true },
     then: { type: "constant", value: null },
     else: { type: "constant", value: null },
   } as const);
 
-  expect(ast.$.resolve()).toEqual({ type: "bound", value: ["Nil"] });
+  expect(a.typedAst.$.resolve()).toEqual({ type: "bound", value: ["Nil"] });
 });
 
 test("if should not typecheck if arg is not bool", () => {
-  const [, errors] = typecheck<{}>({
+  const a = new Analysis<{}>({
     type: "abstraction",
     param: { name: "x" },
     body: {
@@ -267,7 +279,7 @@ test("if should not typecheck if arg is not bool", () => {
     },
   });
 
-  expect(errors.length).toBe(1);
+  expect(a.errors.length).toBe(1);
 });
 
 test("infer recursion", () => {
@@ -284,14 +296,14 @@ test("infer recursion", () => {
     },
   };
 
-  const [ast] = typecheck({
+  const a = new Analysis({
     type: "let",
     binding: { name: "f" },
     definition,
     body: { type: "constant", value: 42 },
   });
 
-  const resolved = (ast as any).binding.$.resolve();
+  const resolved = (a.typedAst as any).binding.$.resolve();
   expect(resolved.type).toBe("bound");
 
   const [, $param, $body] = resolved.value;
@@ -306,7 +318,7 @@ test("infer recursion", () => {
 
 test("infer monomorphic type in let", () => {
   // let x = 42 in x
-  const [ast] = typecheck({
+  const a = new Analysis({
     type: "let",
     binding: { name: "x" },
     definition: {
@@ -319,10 +331,21 @@ test("infer monomorphic type in let", () => {
     },
   } as UntypedAst) as any;
 
-  expect(ast.definition.$.resolve()).toEqual({ type: "bound", value: ["Num"] });
-  expect(ast.definition.$.resolve()).toEqual(ast.binding.$.resolve());
-  expect(ast.binding.$.resolve()).toEqual({ type: "bound", value: ["Num"] });
-  expect(ast.body.$.resolve()).toEqual({ type: "bound", value: ["Num"] });
+  expect(a.typedAst.definition.$.resolve()).toEqual({
+    type: "bound",
+    value: ["Num"],
+  });
+  expect(a.typedAst.definition.$.resolve()).toEqual(
+    a.typedAst.binding.$.resolve(),
+  );
+  expect(a.typedAst.binding.$.resolve()).toEqual({
+    type: "bound",
+    value: ["Num"],
+  });
+  expect(a.typedAst.body.$.resolve()).toEqual({
+    type: "bound",
+    value: ["Num"],
+  });
 });
 
 test("generalizing a type in let should prevent type's variable to unify", () => {
@@ -336,7 +359,7 @@ test("generalizing a type in let should prevent type's variable to unify", () =>
   };
 
   // let id = \x -> x in id nil
-  const [ast] = typecheck({
+  const a = new Analysis({
     type: "let",
     binding: { name: "id" },
     definition: id,
@@ -351,19 +374,19 @@ test("generalizing a type in let should prevent type's variable to unify", () =>
         value: null,
       },
     },
-  }) as any;
+  });
 
-  expect(ast.binding.$.resolve().type).toEqual("bound");
-  const [, $param, $body] = ast.binding.$.resolve().value;
+  expect(a.typedAst.binding.$.resolve().type).toEqual("bound");
+  const [, $param, $body] = a.typedAst.binding.$.resolve().value;
   // generalization should prevent tv to bind in let definition
   expect($param.resolve().type).toEqual("unbound");
   expect($body.resolve().type).toEqual("unbound");
 
-  expect(ast.body.$.resolve(), "body type").toEqual({
+  expect(a.typedAst.body.$.resolve(), "body type").toEqual({
     type: "bound",
     value: ["Nil"],
   });
-  expect(ast.$.resolve(), "ast type").toEqual({
+  expect(a.typedAst.$.resolve(), "ast type").toEqual({
     type: "bound",
     value: ["Nil"],
   });
@@ -374,7 +397,7 @@ test("it should be possible to instantiate a polytype in many ways", () => {
   const id = generalize(["->", $a, $a]);
 
   // let x = id 0; y = id True in nil
-  const [ast, errors] = typecheck<{}>(
+  const a = new Analysis<{}>(
     {
       type: "let",
       binding: { name: "x" },
@@ -397,11 +420,11 @@ test("it should be possible to instantiate a polytype in many ways", () => {
     { id },
   );
 
-  expect(errors.length).toBe(0);
+  expect(a.errors.length).toBe(0);
 });
 
 test("detecting a type error should not invalidate the inferred types", () => {
-  const [ast, errors] = typecheck(
+  const a = new Analysis(
     {
       type: "application",
       caller: { type: "ident", ident: "f" },
@@ -410,13 +433,13 @@ test("detecting a type error should not invalidate the inferred types", () => {
     { x: ["Int"] },
   );
 
-  expect(errors.length).toBe(1);
-  expect((ast as any).arg.$.resolve()).toEqual({
+  expect(a.errors.length).toBe(1);
+  expect((a.typedAst as any).arg.$.resolve()).toEqual({
     type: "bound",
     value: ["Int"],
   });
 
-  expect(errors[0]).toEqual<TypeError<Ast>>({
+  expect(a.errors[0]).toEqual<TypeError<Ast>>({
     type: "unbound-variable",
     ident: "f",
     node: expect.objectContaining({

@@ -10,11 +10,11 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 import { Span, SpannedAst, parse } from "../../parser";
 import { Type } from "../../unify";
 import { typeErrorPPrint, typePPrint } from "../../typecheck/pretty-printer";
-import { TypedAst, typecheck } from "../../typecheck";
+import { Analysis, TypedAst, typecheck } from "../../typecheck";
 import { prelude } from "../../prelude";
 
 const documents = new TextDocuments(TextDocument);
-const docs = new Map<string, [TextDocument, SpannedAndTyped]>();
+const docs = new Map<string, [TextDocument, Analysis<{ span: Span }>]>();
 
 function spanContains([start, end]: Span, offset: number) {
   return start <= offset && end >= offset;
@@ -99,11 +99,11 @@ export function lspCmd() {
       return;
     }
 
-    const [typed, errors] = typecheck(parsed.value, prelude);
-    docs.set(change.document.uri, [change.document, typed]);
+    const analysis = new Analysis(parsed.value, prelude);
+    docs.set(change.document.uri, [change.document, analysis]);
     connection.sendDiagnostics({
       uri: change.document.uri,
-      diagnostics: errors.map((e) => {
+      diagnostics: analysis.errors.map((e) => {
         const [start, end] = e.node.span;
 
         return {
@@ -125,11 +125,11 @@ export function lspCmd() {
       return undefined;
     }
 
-    const [doc, ast] = pair;
+    const [doc, analysis] = pair;
 
     const offset = doc.offsetAt(position);
 
-    const $ = findTypeByOffset(ast, offset);
+    const $ = findTypeByOffset(analysis.typedAst, offset);
     if ($ === undefined) {
       return undefined;
     }
