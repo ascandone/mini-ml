@@ -1,5 +1,4 @@
 import { Ast, Const } from "./ast";
-import { Unifier } from "./type";
 import {
   TVar,
   Type,
